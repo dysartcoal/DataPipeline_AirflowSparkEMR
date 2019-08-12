@@ -82,6 +82,9 @@ def get_fltno_df(spark, data_path, logger):
                     )
     except:
         pass
+    fltno_df_grp = fltno_df.groupby(['airline', 'fltno']).count()
+    assert fltno_df_grp.filter(fltno_df_grp['count'] > 1).count() == 0, \
+        "There are duplicate flight numbers in the input data file flightno.csv"
     fltno_df.persist()
     logger.info("fltno_df row count: {}".format(fltno_df.count()))
     return fltno_df
@@ -137,13 +140,15 @@ def get_unknown_fltno(spark, data_path, merge_df, logger):
 def write_i94(spark, data_path, merge_df, logger):
     """Write to parquet format."""
     i94_data = os.path.join(data_path, 'analytics_data', 'i94')
-    merge_df.write.parquet(i94_data, mode='overwrite', partitionBy=['i94yr', 'i94mon'])
+    merge_df.write.parquet(i94_data, mode='append', partitionBy=['i94yr', 'i94mon'])
     logger.info("Wrote i94 data to parquet")
 
 
-def write_unknown_fltno(spark, data_path, unknown_fltno_df, logger):
+def write_unknown_fltno(spark, data_path, year, month, unknown_fltno_df, logger):
     """write the unknown flight number dataframe to the staging data area as csv."""
-    unknown_fltno_data = os.path.join(data_path, 'staging_data','unknown_fltno')
+    unknown_fltno_data = os.path.join(data_path, 'staging_data',
+                                    "{:d}".format(year), "{:02d}".format(month),
+                                    'unknown_fltno')
     unknown_fltno_df.coalesce(1).write.csv(unknown_fltno_data, mode='overwrite', header=True)
     logger.info("Wrote unknown flight number data to csv")
 
@@ -223,9 +228,9 @@ def main(argv):
     logger = create_logger(spark)
 
     try:
-        opts, args = getopt.getopt(argv,"y:m:",["year=","month="])
+        opts, args = getopt.getopt(argv,"y:m:p:",["year=","month=","path="])
     except getopt.GetoptError:
-        logger.info('test.py -y <year_int> -m <month_int>')
+        logger.info('etl_i94.py -y <year_int> -m <month_int> -d <path_to_data>')
         raise Exception('Invalid argument to {}'.format(app_name))
     for opt, arg in opts:
         if opt in ("-y", "--year"):
@@ -241,39 +246,36 @@ def main(argv):
             else:
                 raise Exception('Invalid month "{}" as argument to {}. Integer month required.'\
                                 .format(arg, app_name))
+        elif opt in ("-p", "--path"):
+            data_path = arg
+
     logger.info('Year is {:d}'.format(year))
     logger.info('Month is {:d}'.format(month))
+    logger.info('Path to data is {}'.format(data_path))
 
-    #external_data = "s3a://udacity-dend/"
-    #internal_data = "s3a://dysartcoal-dend-uswest2/capstone_test"
-
-    #external_data = "s3a://dysartcoal-dend-uswest2/capstone_etl/data/"
-    external_data = os.environ.get('HOME') + "/src/python/Udacity/CapstoneProject/prep/"
-    internal_data = external_data
-
-    i94_df = get_i94_df(spark, external_data, year, month, logger)
+    i94_df = get_i94_df(spark, data_path, year, month, logger)
     i94_rowcount = i94_df.count()
-    port_df = get_port_df(spark, internal_data, logger)
-    ctry_df = get_ctry_df(spark, internal_data, logger)
-    fltno_df = get_fltno_df(spark, internal_data, logger)
+    port_df = get_port_df(spark, data_path, logger)
+    ctry_df = get_ctry_df(spark, data_path, logger)
+    fltno_df = get_fltno_df(spark, data_path, logger)
     merge_df = merge_i94_lookup(spark, i94_df, port_df, ctry_df, fltno_df, logger)
-    unknown_fltno_df = get_unknown_fltno(spark, internal_data, merge_df, logger)
+    unknown_fltno_df = get_unknown_fltno(spark, data_path, merge_df, logger)
 
-    final_df = get_final_i94(spark, internal_data, merge_df, logger)
+    final_df = get_final_i94(spark, data_path, merge_df, logger)
     final_rowcount = final_df.count()
     assert i94_rowcount == final_rowcount, (("The row count has changed during processing: " +
                                         "initial rowcount={}, final rowcount={}")
                                         .format(i94_rowcount, final_rowcount))
 
     # Write analytics data
-    write_unknown_fltno(spark, internal_data, unknown_fltno_df, logger)
-    write_i94(spark, internal_data, final_df, logger)
+    write_unknown_fltno(spark, data_path, year, month, unknown_fltno_df, logger)
+    write_i94(spark, data_path, final_df, logger)
 
     # Write out data summaries
-    write_rowsandnulls(spark, internal_data, 'i94', year, month, merge_df, logger)
-    write_rowsandnulls(spark, internal_data, 'flight', year, month, unknown_fltno_df, logger)
-    write_intfield_summary(spark, internal_data,'i94', year, month, merge_df, logger)
-    write_stringfield_summary(spark, internal_data, 'i94', year, month, merge_df, logger)
+    write_rowsandnulls(spark, data_path, 'i94', year, month, merge_df, logger)
+    write_rowsandnulls(spark, data_path, 'flight', year, month, unknown_fltno_df, logger)
+    write_intfield_summary(spark, data_path,'i94', year, month, merge_df, logger)
+    write_stringfield_summary(spark, data_path, 'i94', year, month, merge_df, logger)
 
 
     logger.info("Finished etl_i94. Stopping spark.")
