@@ -48,6 +48,8 @@ def get_unknown_fltno(data_path):
         df = pd.read_csv(filename, index_col=None, header=0)
         li.append(df)
 
+    if len(li) == 0:
+        return pd.DataFrame({'A' : []})
     unknown_fltno_df  = pd.concat(li, axis=0, ignore_index=True)
     unknown_fltno_df['fltno'] = unknown_fltno_df['fltno'].apply(str)
     unknown_fltno_df['depapt'] = ''
@@ -67,11 +69,14 @@ def move_processed_files(data_path):
     source_files = "*/*/unknown_fltno/*.csv"
     all_files = glob.glob(os.path.join(data_path, source_files))
     processed_path = os.path.join(data_path, "processed")
+    unknown_fltno_path = os.path.join(processed_path, "unknown_fltno")
     if not os.path.exists(processed_path):
         os.mkdir(processed_path)
+    if not os.path.exists(unknown_fltno_path):
+        os.mkdir(unknown_fltno_path)
     for filename in all_files:
         # os.path.basename gets the filename without the path
-        new_filename = os.path.join(processed_path, os.path.basename(filename))
+        new_filename = os.path.join(unknown_fltno_path, os.path.basename(filename))
         os.rename(filename, new_filename)
 
 
@@ -89,6 +94,9 @@ def main(argv):
             data_path = arg
 
     unknown_fltno_df = get_unknown_fltno(data_path)
+    if unknown_fltno_df.empty:
+        print("No data found")
+        return
 
     for i, row in enumerate(unknown_fltno_df.iterrows()):
         if (unknown_fltno_df['airline'][i]=='unknown' or
