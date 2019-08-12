@@ -44,6 +44,9 @@ def dedup_flights(df):
     # Resolve the duplicates so that the good values
     # can be appended to the good_df list
     dup_df = flat_df_grp.loc[flat_df_grp['size'] > 1, :]
+    if dup_df.empty:
+        return good_airport_df
+
     dup_airport_df = (dup_df.merge(df,
                                     left_on=['airline', 'fltno'],
                                     right_on=['airline', 'fltno'])
@@ -102,6 +105,9 @@ def main(argv):
             analytics_path = arg
 
     df = get_flights(staging_path, analytics_path)
+    if df.empty:
+        print("No data found")
+        return
     final_df = dedup_flights(df)
     write_flights(analytics_path, final_df)
     move_processed_files(staging_path)
