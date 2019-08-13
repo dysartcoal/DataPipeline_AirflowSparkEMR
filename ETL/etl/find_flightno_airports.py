@@ -43,6 +43,8 @@ def get_flight(airline, fltno):
 
 def get_unknown_fltno(data_path):
     all_files = glob.glob(os.path.join(data_path, "*/*/unknown_fltno/*.csv"))
+    print('Processing the following files:')
+    print(*all_files, sep='\n')
     li = []
     for filename in all_files:
         df = pd.read_csv(filename, index_col=None, header=0)
@@ -85,12 +87,12 @@ def main(argv):
     """Configure the input and output locations and call the processing methods"""
 
     try:
-        opts, args = getopt.getopt(argv,"p:",["path="])
+        opts, args = getopt.getopt(argv,"s:",["staging="])
     except getopt.GetoptError:
-        logger.info('find_flightno_airports.py -p <data_path>')
+        logger.info('find_flightno_airports.py -s <staging_data_path>')
         raise Exception('Invalid argument to {}'.format(app_name))
     for opt, arg in opts:
-        if opt in ("-p", "--path"):
+        if opt in ("-s", "--staging"):
             data_path = arg
 
     unknown_fltno_df = get_unknown_fltno(data_path)
