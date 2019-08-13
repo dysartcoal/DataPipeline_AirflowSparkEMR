@@ -1,5 +1,5 @@
 """
-Example: spark-submit --master local ./etl_i94.py -y 2016 -m 4
+Example: spark-submit --master local ./etl_i94.py -y 2016 -m 3 -p /Users/kim/src/python/Udacity/CapstoneProject/prep/
 """
 import os
 import re
@@ -35,6 +35,9 @@ def get_i94_df(spark, data_path, year, month, logger):
     """Create the dataframe of visitor data from the source file"""
     imm_data = os.path.join(data_path, "sas_data", "{:d}".format(year), "{:02d}".format(month), "*.csv")
     imm_df = spark.read.csv(imm_data, header=True)
+    imm_df.persist()
+    count = imm_df.count()
+    assert count > 0, "Zero rows in {}".format(imm_data)
     imm_df_cols = ['cicid', 'i94yr', 'i94mon', 'i94cit', 'i94res',
                   'i94port', 'arrdate', 'i94mode', 'i94addr', 'depdate',
                   'i94bir', 'i94visa', 'matflag',
@@ -47,7 +50,7 @@ def get_i94_df(spark, data_path, year, month, logger):
     imm_df = imm_df.withColumn('fltno', regexp_replace('fltno', '^[0]*', ''))
     imm_df = imm_df.select(imm_df_cols)
     imm_df.persist()
-    logger.info("imm_df row count: {}".format(imm_df.count()))
+    logger.info("imm_df row count: {}".format(count))
     return imm_df
 
 
@@ -56,7 +59,9 @@ def get_port_df(spark, data_path, logger):
     port_data = os.path.join(data_path, 'lookup_data', 'i94port_codes.csv')
     port_df = spark.read.csv(port_data, sep="|", header=True)
     port_df.persist()
-    logger.info("port_df row count: {}".format(port_df.count()))
+    count = port_df.count()
+    assert count > 0, "Zero rows in {}".format(port_data)
+    logger.info("port_df row count: {}".format(count))
     return port_df
 
 
@@ -66,7 +71,9 @@ def get_ctry_df(spark, data_path, logger):
     ctry_df = spark.read.csv(ctry_data, sep='|', header=True)
     ctry_df = ctry_df.withColumn('code', ctry_df['code'].cast(IntegerType()))
     ctry_df.persist()
-    logger.info("ctry_df row count: {}".format(ctry_df.count()))
+    count = ctry_df.count()
+    assert count > 0, "Zero rows in {}".format(ctry_data)
+    logger.info("ctry_df row count: {}".format(count))
     return ctry_df
 
 
@@ -131,6 +138,7 @@ def get_unknown_fltno(spark, data_path, merge_df, logger):
     unknown_fltno_df = (merge_df.filter(merge_df.depapt.isNull())
                         .filter(merge_df.airline.isNotNull())
                         .filter(merge_df.fltno.isNotNull())
+                        .filter(merge_df.i94mode == 1)
                         .select(['airline', 'fltno'])
                         .distinct())
     unknown_fltno_df.persist()
@@ -230,7 +238,7 @@ def main(argv):
     try:
         opts, args = getopt.getopt(argv,"y:m:p:",["year=","month=","path="])
     except getopt.GetoptError:
-        logger.info('etl_i94.py -y <year_int> -m <month_int> -d <path_to_data>')
+        logger.info('etl_i94.py -y <year_int> -m <month_int> -p <path_to_data>')
         raise Exception('Invalid argument to {}'.format(app_name))
     for opt, arg in opts:
         if opt in ("-y", "--year"):
