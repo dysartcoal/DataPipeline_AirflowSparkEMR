@@ -1,5 +1,22 @@
-"""
-Example:
+"""Extract SAS data for the year and month and write to S3 as csv
+
+Multiple csv files are written to hold chunks of 100K records.
+The key on S3 is appended with the year and month to separate data for
+different months.
+
+Parameters:
+    year (int): The year of the input data
+    month (int): The month of the input data
+    data_path (str): Path to the input data
+    config_filename (str): Path to the AWS config file
+    bucket (str): S3 bucket name
+    key (str): S3 key.  This will be appended with the year and month and
+    individual filenames.
+
+
+Returns:
+
+Example Usage:
 python udacitysas_to_s3csv.py -y 2016 -m 1 -p ../../data -a cap.cfg -b dysartcoal-dend-uswest2 -k capstone_etl/data/sas_data
 """
 from io import StringIO
