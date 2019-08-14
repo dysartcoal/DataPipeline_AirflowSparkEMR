@@ -1,5 +1,32 @@
-"""
-Example: spark-submit --master local ./etl_i94.py -y 2016 -m 3 -p /Users/kim/src/python/Udacity/CapstoneProject/prep/
+"""Extract source i94 data for the year and month and write to S3 as parquet
+
+i94 data is read in (from the CSV files) for the specified year and month.
+The i94 data is merged with port codes, and country codes for citizenship
+and residency to enable fully named fields for these values.
+This data is written to parquet format partitioned by year and month.
+
+Flight numbers in the i94 data set are merged against the existing
+flightno analytics data to identify flights for which the origin and
+destination airports have not yet been identified.  This list of flights
+is written to the staging data area.
+
+The data set is analysed for missing values, nulls and unknowns and the
+summary data for this is written to a pipeline log file.
+
+This output data is intended for data exploration and initial data analysis
+and there is therefore little transformation and no aggregation at this
+stage.
+
+
+Parameters:
+    year (int): The year of the input data
+    month (int): The month of the input data
+    data_path (str): Path to the data area for both input and output
+
+Returns:
+
+Example Usage:
+spark-submit --master local ./etl_i94.py -y 2016 -m 1 -p ../../prep/
 """
 import os
 import re
@@ -117,8 +144,7 @@ def merge_i94_lookup(spark, imm_df, port_df, ctry_df, fltno_df, logger):
     return merge_df
 
 def get_final_i94(spark, data_path, merge_df, logger):
-    """Select the columns required for the analytics data set.
-    """
+    """Select the columns required for the analytics data set."""
     merge_df_cols = ['cicid', 'i94yr', 'i94mon',
                         'citizen_ctry', 'resident_ctry',
                         'i94port_raw', 'i94port_state', 'i94port_bps', 'i94port_city',
