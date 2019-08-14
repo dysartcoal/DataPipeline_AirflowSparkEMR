@@ -13,10 +13,8 @@ import os
 import time
 from pprint import pprint
 
-seven_days_ago = datetime.combine(
-        datetime.today() - timedelta(7), datetime.min.time())
 schedule_interval = '0 0 1 * *'  # Schedule to run at midnight on the 1st of each month
-s3_sas_data = 'capstone_etl/data/sas_data/{execution_date.year}/{execution_date.month:02d}'
+s3_sas_data = 'capstone_etl/data/sas_data/{prev_execution_date.year}/{prev_execution_date.month:02d}'
 
 default_args = {
     'owner': 'airflow',
@@ -27,9 +25,9 @@ default_args = {
 
 
 dag = DAG(
-    dag_id='test_s3exists_dag20',
+    dag_id='test_s3exists_dag31',
     start_date=datetime(2016,2,1), # Start on first of Feb to process Jan data
-    end_date=datetime(2016,4,1), # Currently only have data until Dec 2016
+    end_date=datetime(2016,2,1), # Currently only have data until Dec 2016
     catchup=True,
     default_args=default_args,
     description='Test out the s3 checks',
