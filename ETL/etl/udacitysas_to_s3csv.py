@@ -1,8 +1,10 @@
 """Extract SAS data for the year and month and write to S3 as csv
 
+SAS data is read in for the specified year and month.  Some data
+cleanup of types and nan values is carried out before writing data.
 Multiple csv files are written to hold chunks of 100K records.
-The key on S3 is appended with the year and month to separate data for
-different months.
+The key on S3 is appended with the year and month to separate output
+data for different months.
 
 Parameters:
     year (int): The year of the input data
@@ -46,6 +48,45 @@ def get_s3_resource(config_filename):
                       )
     return s3
 
+def clean_dataframe(df):
+    """Data transformation to enable dates and integers where appropriate.
+
+    arrdate and depdate converted to datetime values
+    any nan values in string columns replaced with 'unknown'
+    any nan values in integer columns replaced with -1
+    """
+    cols = ['cicid', 'i94yr', 'i94mon', 'i94cit', 'i94res', 'i94port', 'arrdate',
+       'i94mode', 'i94addr',  'depdate', 'i94bir', 'i94visa',
+       'matflag', 'biryear', 'gender', 'insnum', 'airline',
+       'admnum', 'fltno', 'visatype']
+
+    int_cols = ['cicid', 'i94yr', 'i94mon', 'i94cit', 'i94res',
+                'i94mode', 'i94bir', 'i94visa',
+                'biryear', 'admnum']
+
+    string_cols = ['i94port', 'i94addr', 'matflag',  'gender',
+                   'insnum', 'airline','fltno', 'visatype']
+
+
+    new_df = df[cols].copy()
+
+    # Convert arrival and departure dates to datetime values
+    new_df['arrdate'] = pd.to_timedelta(new_df['arrdate'], unit='D') + pd.Timestamp('1960-1-1')
+    new_df['depdate'] = pd.to_timedelta(new_df['depdate'], unit='D') + pd.Timestamp('1960-1-1')
+
+    # Replace any nans in the string columns with 'unknown'
+    str_df = new_df[string_cols]
+    for col in str_df:
+        new_df[col] = str_df[col].apply(lambda x: 'unknown' if pd.isnull(x)  else x)
+
+    # Replace all floats with ints and replace NaNs with -1
+    int_df = new_df[int_cols]
+    int_df = int_df.fillna(-1).astype(int)
+    for col in int_df:
+        new_df[col] = int_df[col]
+
+    return new_df
+
 
 def sas_to_s3csv(sas_path, year, month_num, s3, bucket, key):
     """Read the data from SAS files and write to multiple csv files on S3.
@@ -71,9 +112,12 @@ def sas_to_s3csv(sas_path, year, month_num, s3, bucket, key):
     sasds = pd.read_sas(os.path.join(sas_path, '18-83510-I94-Data-{}/'.format(year),
                                      filename_template.substitute(mmm=month, yy=yr)),
                           chunksize=100000,
-                          iterator=True)
+                          iterator=True,
+                          encoding='iso-8859-1')
     rowcount = 0
     for i,df in enumerate(sasds):
+        df = clean_dataframe(df)
+
         csv_buffer = StringIO()
         df.to_csv(csv_buffer)
         rowcount += df.shape[0]
