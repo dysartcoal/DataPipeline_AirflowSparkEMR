@@ -1,7 +1,7 @@
 from __future__ import print_function
 from builtins import range
 from airflow.operators.python_operator import PythonOperator
-from airflow.operators import (StageToRedshiftOperator, LoadFactOperator,
+from airflow.operators.capstone_plugin import (StageToRedshiftOperator, LoadFactOperator,
                                 LoadDimensionOperator, DataQualityOperator,
                                 S3DataExistsOperator)
 from airflow.operators.dummy_operator import DummyOperator
@@ -39,7 +39,7 @@ start_operator = DummyOperator(task_id='Begin_execution',  dag=dag)
 check_lookupi94port_s3  = S3DataExistsOperator(
     task_id='check_lookupi94port_on_s3',
     dag=dag,
-    aws_conn_id="aws_conn_id",
+    aws_conn_id="aws_default",
     bucket='dysartcoal-dend-uswest2',
     prefix='capstone_etl/data/lookup_data',
     key = 'i94port_codes.csv'
@@ -48,7 +48,7 @@ check_lookupi94port_s3  = S3DataExistsOperator(
 check_lookupi94citres_s3  = S3DataExistsOperator(
     task_id='check_lookupi94citres_on_s3',
     dag=dag,
-    aws_conn_id="aws_conn_id",
+    aws_conn_id="aws_default",
     bucket='dysartcoal-dend-uswest2',
     prefix='capstone_etl/data/lookup_data',
     key = 'i94cit_i94res_codes.csv'
@@ -57,7 +57,7 @@ check_lookupi94citres_s3  = S3DataExistsOperator(
 check_analyticsflightno_s3  = S3DataExistsOperator(
     task_id='check_analyticsflightno_on_s3',
     dag=dag,
-    aws_conn_id="aws_conn_id",
+    aws_conn_id="aws_default",
     bucket='dysartcoal-dend-uswest2',
     prefix='capstone_etl/data/analytics_data/flight',
     key = 'flightno.csv'
@@ -66,7 +66,7 @@ check_analyticsflightno_s3  = S3DataExistsOperator(
 check_sascsv_s3  = S3DataExistsOperator(
     task_id='check_sascsv_on_s3',
     dag=dag,
-    aws_conn_id="aws_conn_id",
+    aws_conn_id="aws_default",
     bucket='dysartcoal-dend-uswest2',
     prefix=s3_sas_data,
     wildcard_key = '*.csv'
