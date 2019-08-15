@@ -268,14 +268,14 @@ def main(argv):
         raise Exception('Invalid argument to {}'.format(app_name))
     for opt, arg in opts:
         if opt in ("-y", "--year"):
-            if arg.isnumeric():
+            if arg.isdigit():
                 year = int(arg)
             else:
                 raise Exception('Invalid year "{}" as argument to {}. Integer year required.'\
                                 .format(arg, app_name))
         elif opt in ("-m", "--month"):
 
-            if arg.isnumeric():
+            if arg.isdigit():
                 month = int(arg)
             else:
                 raise Exception('Invalid month "{}" as argument to {}. Integer month required.'\
