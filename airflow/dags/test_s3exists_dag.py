@@ -1,9 +1,7 @@
 from __future__ import print_function
 from builtins import range
 from airflow.operators.python_operator import PythonOperator
-from airflow.operators.capstone_plugin import (StageToRedshiftOperator, LoadFactOperator,
-                                LoadDimensionOperator, DataQualityOperator,
-                                S3DataExistsOperator)
+from airflow.operators.capstone_plugin import S3DataExistsOperator
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.models import DAG
 from datetime import datetime, timedelta
