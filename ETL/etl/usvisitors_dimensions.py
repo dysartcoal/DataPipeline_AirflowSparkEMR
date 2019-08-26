@@ -1,3 +1,27 @@
+"""Create the dimensions that remain fixed (port, duration, age) and write to S3 as parquet
+
+The port code data is read from csv files in the lookup directory. By cross joining
+with the mode, a separate port is created for each of the arrival modes to enable
+differentiation if necessary although it is not clear if one port can support two
+different transport modes and if these would be distinct in other ways.  The port
+dimension contains mainly geographical data relating to the port.
+
+The age and duration dimensions are generated manually according to pre-specified
+age and duration ranges.
+
+The dimension tables are written to parquet format on S3.
+
+
+Parameters:
+    year (int): The year of the input data
+    month (int): The month of the input data
+    data_path (str): Path to the data area for both input and output
+
+Returns:
+
+Example Usage:
+spark-submit --master local ./usvisitors_dimension.py -p ../../prep/
+"""
 import os
 import re
 import sys, getopt
@@ -39,6 +63,7 @@ def get_port_df(spark, data_path, logger):
     logger.info("port_df row count: {}".format(count))
     return port_df
 
+
 def get_port_dimension(spark, port_df, mode_df, logger):
     """Create the port dimension
 
@@ -47,14 +72,21 @@ def get_port_dimension(spark, port_df, mode_df, logger):
     """
     portdim_df = (mode_df.crossJoin(port_df))
     portdim_df = portdim_df.withColumn('port_id', concat(col('mode_code'), lit('_'), col('code')))
-    portdim_df = portdim_df.withColumnRenamed('county_name', 'county')\
-                                    .withColumnRenamed('state_name', 'state')\
+    portdim_df = portdim_df.withColumnRenamed('county_name', 'port_county')\
+                                    .withColumnRenamed('state_name', 'port_state')\
+                                    .withColumnRenamed('state_id', 'port_state_abbr')\
                                     .withColumnRenamed('code', 'i94port_code')\
-                                    .withColumnRenamed('country_code', 'country_id')
-    portdim_cols = ['port_id', 'i94port_code', 'mode',
-                        'latitude', 'longitude',
-                        'place', 'city', 'county',
-                        'state_id', 'state', 'country_id', 'country'
+                                    .withColumnRenamed('country_code', 'port_country_abbr')\
+                                    .withColumnRenamed('mode', 'port_mode')\
+                                    .withColumnRenamed('latitude', 'port_latitude')\
+                                    .withColumnRenamed('longitude', 'port_longitude')\
+                                    .withColumnRenamed('city', 'port_city')\
+                                    .withColumnRenamed('country', 'port_country')\
+                                    .withColumnRenamed('place', 'port_place')
+    portdim_cols = ['port_id', 'i94port_code', 'port_mode',
+                        'port_latitude', 'port_longitude',
+                        'port_place', 'port_city', 'port_county',
+                        'port_state_abbr', 'port_state', 'port_country_abbr', 'port_country'
                        ]
     portdim_df = portdim_df.select(portdim_cols)
     portdim_df.persist()
@@ -63,42 +95,46 @@ def get_port_dimension(spark, port_df, mode_df, logger):
 
 def get_age_dimension(spark, logger):
     """Create a dataframe to hold defined age ranges"""
-    agedim_df = spark.createDataFrame([(0,'0-1'),
-                                 (1, '2-10'),
-                                 (2, '11-15'),
-                                 (3, '16-20'),
-                                 (4, '21-25'),
-                                 (5, '26-35'),
-                                 (6, '36-45'),
-                                 (7, '46-55'),
-                                 (8, '56-65'),
-                                 (9, '66+'),
-                                 (999, 'unknown')
+    agedim_df = spark.createDataFrame([(0,'invalid'),
+                                (1,'0-1'),
+                                 (2, '2-10'),
+                                 (3, '11-15'),
+                                 (4, '16-20'),
+                                 (5, '21-25'),
+                                 (6, '26-35'),
+                                 (7, '36-45'),
+                                 (8, '46-55'),
+                                 (9, '56-65'),
+                                 (10, '66+'),
+                                 (999,'unknown')
                                  ], ['age_id', 'age_range'] )
     logger.info("agedim_df row count: {}".format(agedim_df.count()))
     return agedim_df
 
 
 def get_duration_dimension(spark, logger):
-    """Create a dataframe to hold defined durations"""
-    durdim_df = spark.createDataFrame([(0,'0-3'),
-                                (1, '4-7'),
-                                (2, '8-10'),
-                                (3, '11-14'),
-                                (4, '15-21'),
-                                (5, '22-28'),
-                                (6, '29+'),
-                                (999, 'unknown')
+    """Create a dataframe to hold defined duration ranges in days"""
+    durdim_df = spark.createDataFrame([(0, 'invalid'),
+                                (1,'0-3'),
+                                (2, '4-7'),
+                                (3, '8-10'),
+                                (4, '11-14'),
+                                (5, '15-21'),
+                                (6, '22-28'),
+                                (7, '29+'),
+                                (999,'unknown')
                                 ], ['duration_id', 'duration_days'] )
     logger.info("durdim_df row count: {}".format(durdim_df.count()))
     return durdim_df
 
 
 def write_dimension(spark, data_path, file_path, df, logger):
-        df.write\
-        .mode('overwrite')\
-        .parquet(os.path.join(data_path, file_path))
-        logger.info("Parquet format written to {}".format(file_path))
+    """Write the dataframe to parquet format"""
+    df.coalesce(1)\
+    .write\
+    .mode('overwrite')\
+    .parquet(os.path.join(data_path, file_path))
+    logger.info("Parquet format written to {}".format(file_path))
 
 
 def main(argv):
@@ -122,7 +158,8 @@ def main(argv):
     mode_df = spark.createDataFrame([(1,'Air'),
                                     (2, 'Sea'),
                                     (3, 'Land'),
-                                    (9, 'Not reported')],
+                                    (9, 'Not reported'),
+                                    (-1, 'unknown')],
                                     ['mode_code', 'mode'] )
 
     portdim_df = get_port_dimension(spark, port_df, mode_df, logger)
