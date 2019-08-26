@@ -219,7 +219,7 @@ add_checkstep_task = MyEmrAddStepsOperator(
 watch_checkstep_task = EmrStepSensor(
     task_id='watch_checkstep',
     job_flow_id="{{ task_instance.xcom_pull('create_job_flow', key='return_value') }}",
-    step_id="{{ task_instance.xcom_pull('add_i94step', key='return_value')[0] }}",
+    step_id="{{ task_instance.xcom_pull('add_checkstep', key='return_value')[0] }}",
     aws_conn_id='aws_default',
     dag=dag
 )
