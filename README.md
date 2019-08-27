@@ -24,7 +24,7 @@ The project produces parquet files of i94 visitor data which can be joined with 
 
 ## Installation
 
-The data dictionary can be viewed in a separate pdf file: [view data dictionary](../doc/datadictionary.pdf)
+The data dictionary can be viewed in a separate pdf file: [view data dictionary](doc/datadictionary.pdf)
 
 Blah blah Blah
 
