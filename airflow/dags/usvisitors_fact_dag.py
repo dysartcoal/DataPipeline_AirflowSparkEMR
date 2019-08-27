@@ -42,17 +42,17 @@ sas_prefix = 'capstone_etl/data/sas_data/{execution_date.year}/{execution_date.m
 
 DEFAULT_ARGS = {
 'owner': 'airflow',
-'depends_on_past': False,
+'depends_on_past': True,
 'retries':0,
 'email_on_failure': False,
 'email_on_retry': False
 }
 
 dag = DAG(
-    'usvisitors_fact_dag',
+    'usvisitors_fact_dag_201607_201612',
     default_args=DEFAULT_ARGS,
-    start_date=datetime(2016,1,1),
-    end_date=datetime(2016,1,1), # Currently only have data until Dec 2016
+    start_date=datetime(2016,7,1),
+    end_date=datetime(2016,12,1), # Currently only have data until Dec 2016
     catchup=True,
     dagrun_timeout=timedelta(hours=2),
     #schedule_interval='0 3 * * *'
@@ -160,8 +160,12 @@ FACT_ROWCHECK = [
 ]
 
 
-
-start_operator = DummyOperator(task_id='Begin_execution',  dag=dag)
+# Use wait_for_downstream to ensure sequential DAG runs
+start_operator = DummyOperator(
+    task_id='Begin_execution',
+    dag=dag,
+    wait_for_downstream=True
+)
 
 check_portdim_s3  = S3DataExistsOperator(
     task_id='check_portdim_on_s3',
@@ -290,3 +294,8 @@ start_operator >> [check_portdim_s3,
                 >> cluster_remover \
                 >> pause_task \
                 >> end_operator
+
+# Include a dependency on the completion of the pause_task to
+# ensure that the catchup runs do not overlap and cause
+# issues with the EC2 quotas
+start_operator >> pause_task
