@@ -24,10 +24,16 @@ The project produces parquet files of i94 visitor data which can be joined with 
 
 ## Installation
 
+The data dictionary can be viewed in a separate pdf file: [view data dictionary](../doc/datadictionary.pdf)
 
 Blah blah Blah
 
 Blha lbasfkh oiwue aosfiu Copyright (c)
+
+The data dictionary exists in a separate pdf file: <a href="doc/datadictionary.pdf">View Data Dictionary</a>.
+
+Or alternatively you can view the data dictionary here:
+
 
 ![US Visitors Data Dictionary ](doc/datadictionary.pdf)
 
@@ -35,7 +41,7 @@ Blha lbasfkh oiwue aosfiu Copyright (c)
 
 <object data="doc/datadictionary.pdf" type="application/pdf" width="700px" height="700px">
     <embed src="doc/datadictionary.pdf">
-        <p>This browser does not support PDFs. Please download the PDF to view it: <a href="doc/datadictionary.pdf">Download PDF</a>.</p>
+        <p>The data dictionary can be viewed from a pdf file here: <a href="doc/datadictionary.pdf">View PDF</a>.</p>
     </embed>
 </object>
 
