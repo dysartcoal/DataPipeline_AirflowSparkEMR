@@ -31,6 +31,14 @@ Blha lbasfkh oiwue aosfiu Copyright (c)
 
 ![US Visitors Data Dictionary ](doc/datadictionary.pdf)
 
+[embed]doc/datadictionary.pdf[/embed]
+
+<object data="doc/datadictionary.pdf" type="application/pdf" width="700px" height="700px">
+    <embed src="doc/datadictionary.pdf">
+        <p>This browser does not support PDFs. Please download the PDF to view it: <a href="doc/datadictionary.pdf">Download PDF</a>.</p>
+    </embed>
+</object>
+
 ## Usage
 
 ## License
