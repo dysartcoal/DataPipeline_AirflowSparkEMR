@@ -1,3 +1,21 @@
+"""ETL for US visitors visit_fact table from csv on S3 to aggregated parquet on S3.
+
+The DAG runs monthly and carries out the following steps:
+
+- check for source data
+- spin up the EMR cluster
+- add steps to the EMR cluster to implement the fact ETL and the checking of the
+output data
+- watch the steps for completion
+- terminate the cluster
+
+The ETL steps executed on the cluster are aligned to the execution date of the
+DAG by using the MyEmrAddStepsOperator to support templated steps.
+
+There is a task to wait for the cluster termination to avoid issues with requesting
+EC2 resources exceeding the existing quota.
+
+"""
 import airflow
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
@@ -31,7 +49,7 @@ DEFAULT_ARGS = {
 }
 
 dag = DAG(
-    'usvisitors_fact_dag1',
+    'usvisitors_fact_dag',
     default_args=DEFAULT_ARGS,
     start_date=datetime(2016,1,1),
     end_date=datetime(2016,1,1), # Currently only have data until Dec 2016
@@ -230,20 +248,20 @@ add_checkstep_task = MyEmrAddStepsOperator(
 watch_checkstep_task = EmrStepSensor(
     task_id='watch_checkstep',
     job_flow_id="{{ task_instance.xcom_pull('create_job_flow', key='return_value') }}",
-    step_id="{{ task_instance.xcom_pull('add_factstep', key='return_value')[0] }}",
+    step_id="{{ task_instance.xcom_pull('add_checkstep', key='return_value')[0] }}",
     aws_conn_id='aws_default',
     dag=dag
 )
 
-#cluster_remover = EmrTerminateJobFlowOperator(
-#    task_id='remove_cluster',
-#    job_flow_id="{{ task_instance.xcom_pull('create_job_flow', key='return_value') }}",
-#    aws_conn_id='aws_default',
-#    trigger_rule='all_done',  # Run shut down regardless of success
-#    retries=3,
-#    retry_delay=timedelta(minutes=5),
-#    dag=dag
-#)
+cluster_remover = EmrTerminateJobFlowOperator(
+    task_id='remove_cluster',
+    job_flow_id="{{ task_instance.xcom_pull('create_job_flow', key='return_value') }}",
+    aws_conn_id='aws_default',
+    trigger_rule='all_done',  # Run shut down regardless of success
+    retries=3,
+    retry_delay=timedelta(minutes=5),
+    dag=dag
+)
 
 def pause(minutes):
     '''Sleep for the given number of minutes'''
@@ -269,6 +287,6 @@ start_operator >> [check_portdim_s3,
                 >> watch_factstep_task \
                 >> add_checkstep_task \
                 >> watch_checkstep_task \
-                #>> cluster_remover \
+                >> cluster_remover \
                 >> pause_task \
                 >> end_operator

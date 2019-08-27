@@ -1,3 +1,17 @@
+"""ETL for US visitors fixed dimension tables from csv on S3 to parquet on S3.
+
+The DAG runs once and carries out the following steps:
+
+- check for source data
+- spin up the EMR cluster
+- add steps to the EMR cluster to generate the fixed dimension tables
+- watch the steps for completion
+- terminate the cluster
+
+There is a task to wait for the cluster termination to avoid issues with requesting
+EC2 resources exceeding the existing quota.
+
+"""
 import airflow
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator

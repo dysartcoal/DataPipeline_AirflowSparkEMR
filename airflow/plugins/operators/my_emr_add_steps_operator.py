@@ -1,3 +1,4 @@
+"""Custom EmrAddStepsOperator which supports templated steps"""
 from __future__ import division, absolute_import, print_function
 
 from airflow.utils import apply_defaults
