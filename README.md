@@ -10,7 +10,7 @@ Table of Contents
   * [Data Sources](#data-sources)
 
 ## Description
-This is the Capstone project for the Udacity data engineering degree.  The purpose is to utilise skills and tools presented during the program.
+This is the Capstone project for the Udacity data engineering nanodegree.  The purpose is to utilise skills and tools presented during the program.
 
 The primary dataset is the i94 visitor data set published by for the year 2016.
 
@@ -20,7 +20,16 @@ Additional steps include extraction and transformation of SAS files, web scrapin
 
 The project produces parquet files of i94 visitor data which can be joined with flight number, airport and city data to give the potential for exploratory data analysis, geolocation analysis and potential for exploring the potential of graph databases.
 
+![US Visitors ETL](images/usvisitors_datapipeline.png)
+
 ## Installation
+
+
+Blah blah Blah
+
+Blha lbasfkh oiwue aosfiu Copyright (c)
+
+![US Visitors Data Dictionary ](doc/datadictionary.pdf)
 
 ## Usage
 
@@ -50,3 +59,20 @@ The target purpose for the project data pipeline is to deliver a data set which 
 Installation: Installation is the next section in an effective README. Tell other users how to install your project locally. Optionally, include a gif to make the process even more clear for other people.
 
 Usage: The next section is usage, in which you instruct other people on how to use your project after they’ve installed it. This would also be a good place to include screenshots of your project in action.
+
+## Data Dictionary
+
+### fact_visit
+
+| Field Name | Type | Description | Lineage | Examples | Missing Data |
+| ---------- | ---- | ----------- | ------- | -------- | ------------ |
+|            |      |             |         |          |              |
+| arrivaldate_id | date | Date of arrival in the US.  Also used to identify <br> the relevant date row in the date dimension. | Extracted from SAS data and transformed to YYYY-MM-dd format |
+
+### port
+
+### date
+
+### duration
+
+### age
