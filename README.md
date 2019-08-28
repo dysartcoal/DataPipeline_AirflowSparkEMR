@@ -1,4 +1,4 @@
-# Data Pipeline to Deliver i94 Visitor Data for Exploratory Analysis
+# US Visitors Trial Data Warehouse
 
 Table of Contents
 =================
@@ -74,13 +74,24 @@ The following platforms were used during the project
 
 **Amazon S3 and Amazon EMR and Spark for Trial Data Warehouse Platform**
 
-This is a trial system involving Data Scientists and Data Analysts but with a large amount of data. By selecting Amazon EMR and Spark as the platform for Data Scientists this provides them with plenty of flexibility and a platform suitable for the size of the data set plus support for several machine learning algorithms as well the potential to explore graph databases and associated algorithms.  The data scientists is a small group so access to the system is more easily managed than for the Data Analysts.  
+This is a trial system involving Data Scientists and Data Analysts but with a large amount of data. By selecting Amazon EMR and Spark as the platform for Data Scientists this provides them with plenty of flexibility and a platform suitable for the size of the data set plus support for several machine learning algorithms as well the potential to explore graph databases and associated algorithms.  The Data Science team is a small group so access to the system is more easily managed than for the Data Analysts.  
 
-Given the focus on individual US states, it is simple to generate low cost csv files on a per state basis using Spark for the Data Analysts to investigate the current Data Warehouse data.  Alternatively, if the Data Analysts wanted more flexibility to work across larger sets of data the partitioning of the data and use of parquet as a storage format is well suited to using Amazon Athena and SQL-style querying that the analysts have some basic familiarity with while still keeping costs under control.  This is a good option for larger scale exploratory work on the trial Data Warehouse.
+Given the focus on individual US states, it is simple for relevant people in the Data Team to generate low cost csv files on a per state basis using Spark for the Data Analysts to investigate the current Data Warehouse data.  Alternatively, if the Data Analysts wanted more flexibility to work across larger sets of data the partitioning of the data and use of parquet as a storage format is well suited to using Amazon Athena and SQL-style querying that the analysts have some basic familiarity with while still keeping costs under control.  This is a good option for larger scale exploratory work on the trial Data Warehouse.
 
-Once feedback has been received and any schema or aggregation changes implemented it would be possible to update the data pipeline to load the data warehouse in Amazon Redshift.  In fact, by running the pilot study in the Amazon environment this opens up many options moving forward.
+Once feedback has been received and any schema or aggregation changes implemented it would be possible to update the data pipeline to load the data warehouse into Amazon Redshift.  In fact, by running the pilot study in the Amazon environment this opens up many options moving forward.
 
 Finally, another influencing factor in the choice of Amazon S3 as the final storage platform for the data was the low cost of this solution compared to a Redshift implementation at the outset.
+
+**Parquet format files**
+
+Parquet format files are an efficient means of storing the data for the trial data warehouse for several reasons:
+
+ * the data is compressed which reduces costs
+ * although writing of parquet files can be slow, reading is very quick which is a suitable for this write once-read many times scenario
+ * the data can be partitioned which can make reading of the data efficient.  This is particularly useful when users are only interested in very clearly defined subsets of data such as individual US states
+ * columnar storage improves the efficiency of data reads when filtering by column values
+ * data can be appended which is useful in this scenario where data is being processed in months
+
 
 **Amazon EMR and Spark for ETL Data Processing**
 
@@ -100,18 +111,93 @@ Apache airflow contributes a huge amount of control to the data pipeline develop
 
 
 
+## Data Model
+
+The final data model is a star schema data warehouse as shown below.  The fact table captures a count of the number of visitors with the associated attributes.
+
+ ![US Visitors Data Model](images/usvisitors_erd.png)
+
+ This structure was chosen because it is a simple structure which supports the construction of simple queries while still providing flexibility for exploratory analysis.   The data fields have been named to provide explanation of meaning, although a data dictionary is also provided below in this section.
+
+ By using this structure analysts will be able to aggregate across many different combinations of values to count the number of visitors with the selected attributes.  These counts can be visualised geographically by combining with the port dimension thus fulfilling the requirement to enable geographical analysis.
 
 
-The primary dataset is the i94 visitor data set published by for the year 2016.
+### Discarded Columns
 
-The backbone of the project is a data pipeline implemented in Apache Airflow and executing jobs on Amazon EMR to produce transformed but non-aggregated i94 visitor data in parquet format on Amazon S3.
+ Throughout the data processing pipeline every effort was made not to discard data or make assumptions about the meaning of the data since the unknown, invalid or outlier fields can be as useful to Data Scientists and Data Analysts at this early stage of understanding the data warehouse as the more obviously meaningful data.
 
-Additional steps include extraction and transformation of SAS files, web scraping of flight departure and arrival airports plus the very straightforward manual upload of files to S3.
+ There were however some choices which were made (assumption is that these decisions would be made by the team before or during project implementation) in discarding columns from the original i94 data set and these were:
 
-The project produces parquet files of i94 visitor data which can be joined with flight number, airport and city data to give the potential for exploratory data analysis, geolocation analysis and potential for exploring the potential of graph databases.
+ * cicid - the identifier. Irrelevant in any aggregation.
+ * i94cit - it is assumed a decision was taken by data analysts that this was less relevant than country of residency
+ * count - used for summary statistics but unrequired in this implementation
+ * dtadfile, visapost, occup, entdepa, entdepd, entdepu, dtaddto - are all fields that are not used.
+ * matflag - the value of this field has a 1 to 1 correlation with whether or not the depdate field is populated
+ * biryear - it is assumed that the analysts wanted the age of visitors rather than the year of birth
+ * insnum - this value was sparsely populated and not of interest to the data analysts
+ * airline - it is assumed a decision was taken by data analysts that they were not interested in airline for this project.
+ * fltno - as above.
+ * admnum - the admission number. Irrelevant in any aggregation.
+ * visatype - it is assumed a decision was taken by data analysts that visatype was not of interest for this project.
+
+### Unknown Port Locations
+
+There are 5 ports for which geographical information could not be found:
+
+| i94port	| udacity port description |
+| -------| ------------------------- |
+| TST	| NEWINGTON DATA CENTER TEST, CT |
+| LIN | 	NORTHERN SVC CENTER, MN |
+| 	FOP | 	MORRIS FIELDS AAF, NC |
+| NWN	| NEWPORT, VA |
+| FER |	FERRY, WA |
+
+Any records specifying this entry port have null values for latitude and longitude.
+
+
+### Unknown or Invalid values
+
+Any unknown or invalid values in the data set are marked as such in the aggregated data.  The overarching philsophy of the project was that the missing or invalid data can also provide value to the data scientists so one of the data quality checks of the system is to ensure that the total count of visitors across the aggregated data matches the original row count of the SAS source i94 data.
+
+### Ranges for Duration and Age dimensions
+
+It is assumed that the ranges stated for durations and ages defined in the duration and age dimensions were provided by the Data Analysts.  
+
+### Data Dictionary
 
 
 
+The data dictionary can be viewed in a separate pdf file: [view data dictionary](doc/datadictionary.pdf)
+
+
+
+
+
+
+
+
+
+
+## Airflow DAG
+
+There were two DAGs implemented in airflow:
+
+ * the first to check for the data sources required to create port dimension table and then create the port, age and duration dimension tables which are slow changing dimension tables that do not require to be changed for each new month which is processed.
+ * the second to check for the data sources required to create the visit_fact table and then create the date dimension table and the visit_fact table and check the validity.
+
+ These are illustrated in the diagrams below:
+
+**US Visitors Dimension DAG**
+
+![US Visitors Dimension DAG](images/usvisitors_dim_dag_graphview.png)
+
+**US Visitors Fact DAG**
+
+![US Visitors Fact DAG](images/usvisitors_fact_dag_graphview.png)
+
+**US Visitors Dimension DAG - Tree View Across Several Months**
+
+![US Visitors Fact DAG Tree View](images/usvisitors_fact_dag_treeview.png)
 
 ## Alternative Data Scenarios
 
@@ -119,7 +205,7 @@ The project rubric asked how alternative scenarios may be tackled.  A discussion
 
  * **Data increased by 100x**  In this scenario, at the start of the pipeline, when staging the i94 data on S3, it could be split into 100 separate subsets of data within each month.  This would require a logic change to the ETL extracting the data to write each new set of 100 files to a new folder on S3 and for the python code running on spark to be updated to process the separate folders within the month, one folder at at time.
 
- When it comes to analysis the Data Scientists would make decisions on the filtering and selection of data to enable their analysis. Data Engineers could continue to manage the creation of data subsets in a suitable format for Data Analysts or alternatively provide guidelines for filtering and selection for Athena queries.
+  When it comes to analysis the Data Scientists would make decisions on the filtering and selection of data to enable their analysis. Data Engineers could continue to manage the creation of data subsets in a suitable format for Data Analysts or alternatively provide guidelines for filtering and selection for Athena queries.
 
  * **Pipelines run on a daily basis**  In this scenario an Airflow dag would be implemented in the Udacity workspace to enable daily transfer of data from the Udacity environment to S3.  The existing Airflow dag running locally would have the schedule amended to daily rather than monthly.
 
@@ -134,8 +220,6 @@ The project rubric asked how alternative scenarios may be tackled.  A discussion
 
 
 ## Installation
-
-The data dictionary can be viewed in a separate pdf file: [view data dictionary](doc/datadictionary.pdf)
 
 
 ## Usage
