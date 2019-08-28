@@ -3,11 +3,20 @@
 Table of Contents
 =================
 
-  * [Description](#description)
-  * [Installation](#installation)
-  * [Usage](#usage)
-  * [License](#license)
-  * [Data Sources](#data-sources)
+* [Overview](#overview)
+* [Steps Taken](#steps-taken)
+* [Platform Choices and Justification](#platform-choices-and-justification)
+* [Data Model](#data-model)
+   * [Discarded Columns](#discarded-columns)
+   * [Unknown Port Locations](#unknown-port-locations)
+   * [Unknown or Invalid values](#unknown-or-invalid-values)
+   * [Ranges for Duration and Age dimensions](#ranges-for-duration-and-age-dimensions)
+   * [Data Dictionary](#data-dictionary)
+* [Airflow DAGs](#airflow-dags)
+* [S3 Folder structure](#s3-folder-structure)
+* [Source Code](#source-code)
+* [Data Quality Checks](#data-quality-checks)
+* [Alternative Data Scenarios](#alternative-data-scenarios)
 
 ## Overview
 This is the Capstone project for the Udacity data engineering nanodegree.  The purpose is to utilise skills and tools presented during the program.
