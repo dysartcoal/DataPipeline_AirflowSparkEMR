@@ -50,7 +50,7 @@ The imagined scenario is the creation of an initial trial data warehouse for rev
 
 7. **Development of script to move SAS data to S3.** The Udacity work space is secure so, because of the choice of working with Amazon EMR as the processing platform, it was necessary to move the i94 data to S3.  This was done in a python script by reading the data in chunks from the SAS source and transferring multiple CSV files for each month to S3.
 
-8. **Development of data model**  A data model was developed conceptually then pyspark code was developed locally to create data warehouse tables on spark and write them to parquet format to implement the data model.
+8. **Development of data model.**  A data model was developed conceptually then pyspark code was developed locally to create data warehouse tables on spark and write them to parquet format to implement the data model.
 
 9. **Development of Airflow dags** to:
     * check data sources are in place
@@ -65,10 +65,6 @@ The imagined scenario is the creation of an initial trial data warehouse for rev
 
 
 
-
-## Data transformation
-
-For the year 2016, the i94 data set contained roughly 40 million rows of data.  On
 
 ## Platform Choices and Justification
 
@@ -119,12 +115,22 @@ The project produces parquet files of i94 visitor data which can be joined with 
 
 ## Alternative Data Scenarios
 
- * **Data increased by 100x**
+The project rubric asked how alternative scenarios may be tackled.  A discussion of these is included below.
 
- * **Pipelines run on a daily basis**
+ * **Data increased by 100x**  In this scenario, at the start of the pipeline, when staging the i94 data on S3, it could be split into 100 separate subsets of data within each month.  This would require a logic change to the ETL extracting the data to write each new set of 100 files to a new folder on S3 and for the python code running on spark to be updated to process the separate folders within the month, one folder at at time.
 
- * **Database needed to be accessed by 100+ people**
+ When it comes to analysis the Data Scientists would make decisions on the filtering and selection of data to enable their analysis. Data Engineers could continue to manage the creation of data subsets in a suitable format for Data Analysts or alternatively provide guidelines for filtering and selection for Athena queries.
 
+ * **Pipelines run on a daily basis**  In this scenario an Airflow dag would be implemented in the Udacity workspace to enable daily transfer of data from the Udacity environment to S3.  The existing Airflow dag running locally would have the schedule amended to daily rather than monthly.
+
+ * **Database needed to be accessed by 100+ people**  The current database can be accessed by 100+ people via Athena however there may be significant cost involved with this volume of data analysis.  However, given an agreement on the final structure of the data warehouse, the data pipeline could be executed with an additional step to copy the data into Redshift where there are means available to support this level of concurrent access.
+
+
+
+
+## Data transformation
+
+ For the year 2016, the i94 data set contained roughly 40 million rows of data.  On
 
 
 ## Installation
