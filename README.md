@@ -18,7 +18,7 @@ The imagined scenario is the creation of an initial trial data warehouse for rev
  * to enable data scientists to explore the data and provide feedback on improvements and/or extensions to the data presented
 
  All foreign visitors to the US are required to fill in an I94 arrival/departure record. The primary data set available for the trial data warehouse was the i94 data set of visitors to the US in 2016.  This data set was combined with data defining the ports of entry and their geographical location to produce the trial data warehouse.  
-
+ 
  At a high level, from the SAS format i94 data stored in the Udacity workspace to the Data Warehouse files written as parquet format on Amazon S3 the project data pipeline is illustrated below.
 
 ![US Visitors ETL](images/usvisitors_datapipeline.png)
@@ -30,7 +30,7 @@ The imagined scenario is the creation of an initial trial data warehouse for rev
 
  ![US Visitors Steps](images/usvisitors_steps.png)
 
- 1. **Initial familiarisation with the i94 date.**  A small amount of data was explored locally in a Jupyter Notebook to get an understanding of the fields in the i94 data set, their types and any missing data in that small set.
+ 1. **Initial familiarisation with the i94 data.**  A small amount of data was explored locally in a Jupyter Notebook to get an understanding of the fields in the i94 data set, their types and any missing data in that small set.
 
  2. **Creation of lookup data sets.** the SAS description file was used to create lookup data sets for ports, first destination state and countries of citizenship and residency. Some basic regular expression matching was used in python in a Jupyter Notebook to separate out the state and the port name to enable future joining against city and state data.  At this stage of the data exploration these new lookup tables were joined with the i94 data again to enable familiarisation with the data set.
 
@@ -50,7 +50,7 @@ The imagined scenario is the creation of an initial trial data warehouse for rev
 
 7. **Development of script to move SAS data to S3.** The Udacity work space is secure so, because of the choice of working with Amazon EMR as the processing platform, it was necessary to move the i94 data to S3.  This was done in a python script by reading the data in chunks from the SAS source and transferring multiple CSV files for each month to S3.
 
-7. **Local development of pyspark code to create data warehouse tables on spark and write them to parquet format.**
+7. **Development of data model**  A data model was developed conceptually then pyspark code was developed locally to create data warehouse tables on spark and write them to parquet format to implement the data model.
 
 8. **Development of Airflow dags** to:
     * check data sources are in place
