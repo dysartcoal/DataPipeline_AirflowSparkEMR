@@ -117,7 +117,7 @@ The final data model is a star schema data warehouse as shown below.  The fact t
 
  ![US Visitors Data Model](images/usvisitors_erd.png)
 
- This structure was chosen because it is a simple structure which supports the construction of simple queries while still providing flexibility for exploratory analysis.   The data fields have been named to provide explanation of meaning, although a data dictionary is also provided below in this section.
+ This structure was chosen because it is a straightforward structure which supports the construction of simple queries while still providing flexibility for exploratory analysis.   The data fields have been named to provide explanation of meaning, although a data dictionary is also provided below in this section.
 
  By using this structure analysts will be able to aggregate across many different combinations of values to count the number of visitors with the selected attributes.  These counts can be visualised geographically by combining with the port dimension thus fulfilling the requirement to enable geographical analysis.
 
@@ -171,14 +171,7 @@ The data dictionary can be viewed in a separate pdf file: [view data dictionary]
 
 
 
-
-
-
-
-
-
-
-## Airflow DAG
+## Airflow DAGs
 
 There were two DAGs implemented in airflow:
 
@@ -199,6 +192,57 @@ There were two DAGs implemented in airflow:
 
 ![US Visitors Fact DAG Tree View](images/usvisitors_fact_dag_treeview.png)
 
+
+## S3 Folder structure
+
+The folder structure on S3 is as follows:
+
+* **analysis** Holds the smaller state-specific csv files extracted from the Data Warehouse for Data Analysts to work with.  For example, the files can be loaded into Tableau and geographically based visualisations can be produced.
+* **analytics_data/us_visitors** Holds the US Visitors trial data warehouse parquet files:
+  * visit_fact
+  * date
+  * port
+  * age
+  * duration
+* **lookup_data** Holds the data lookup files which were manually uploaded to S3 and which are used in the generation of the visit_fact table:
+  * i94_addr_codes.csv
+  * i94cit_i94res_codes.csv
+  * i94port_codes.csv
+* **pipeline_logs/us_visitors/_year_/_month_** Holds output from the data pipeline code execution on Amazon EMR for each year and month including:
+  * a summary of all null or invalid values
+  * a summary of the values for all integer fields
+  * a summary of the values for all string fields
+  * confirmation that the total visitor count written to parquet matches the total number of rows read from the SAS input files.
+* **sas_data/_year_/_month_** Holds the csv files resulting from the process of extracting the SAS data from Udacity and writing it to S3 as multiple csv files per month.
+
+
+## Source Code
+
+The following files are used in the data pipeline:
+
+| Filename | Location | Purpose | Execution Platform |
+| -------- | -------- | ------- | ------------------ |
+| ETL/etl/udacitysas_to_s3csv.py | Udacity | ETL: Udacity i94 SAS data to S3 CSV | Udacity|
+| airflow/plugins/operators/s3data_exists.py | Local | Data Check: Check data exists on S3 | Local|
+| airflow/plugins/operators/my_emr_add_steps_operator.py | Local | Data processing: Add EMR job step with templated fields | Local|
+| airflow/plugins/operators/__ init __.py | Local | Support file | Local|
+| airflow/plugins/__ init __.py | Local | Support file | Local|
+| airflow/dags/usvisitors_dim.py | Local | Airflow dag definition to check for S3 source files, <br> create an EMR cluster, create data warehouse <br>fixed dimensions then remove the cluster. | Local |
+| airflow/dags/usvisitors_fact.py | Local | Airflow dag definition to check for S3 source files, <br>create an EMR cluster, create date dimension  <br>plus fact table then remove the cluster. A final <br> validity check is also carried out. | Local |
+| awsemr/bootstrap_action.sh | S3 | Copy the folder of python scripts from S3 to EMR <br> when the cluster starts up. | Amazon EMR |
+| ETL/etl/usvisitors_dimensions.py  | S3 | Create the port, age and duration dimension tables <br> in parquet format | Amazon EMR |
+| ETL/etl/usvisitors_dimensions.py  | S3 | Create the date dimension table and the visit_fact <br> tables in parquet format.  | Amazon EMR |
+| ETL/etl/checkrowsandcounts_sas_parquet.py  | S3 | Check the source rows match the output visitor counts.  | Amazon EMR |
+
+## Data Quality Checks
+
+Prior to aggregation, the code which executes on spark writes out a summary of all fields and the number of nulls, Nans, unknown values for each field in the data set.
+
+During data processing on EMR in Spark, there is a check after each read command to check that there has been data successfully read from the source.
+
+At the end of the data processing pipeline for each month, the number of rows of the source data is checked against the total sum of visitors in the parquet fact table to ensure that no data has been lost and that every visitor is attributed somewhere.
+
+
 ## Alternative Data Scenarios
 
 The project rubric asked how alternative scenarios may be tackled.  A discussion of these is included below.
@@ -210,63 +254,3 @@ The project rubric asked how alternative scenarios may be tackled.  A discussion
  * **Pipelines run on a daily basis**  In this scenario an Airflow dag would be implemented in the Udacity workspace to enable daily transfer of data from the Udacity environment to S3.  The existing Airflow dag running locally would have the schedule amended to daily rather than monthly.
 
  * **Database needed to be accessed by 100+ people**  The current database can be accessed by 100+ people via Athena however there may be significant cost involved with this volume of data analysis.  However, given an agreement on the final structure of the data warehouse, the data pipeline could be executed with an additional step to copy the data into Redshift where there are means available to support this level of concurrent access.
-
-
-
-
-## Data transformation
-
- For the year 2016, the i94 data set contained roughly 40 million rows of data.  On
-
-
-## Installation
-
-
-## Usage
-
-## License
-
-## Data Sources
-
-
-The project includes:
-
-- Step 1 - Deployed on Udacity System
-  - Extract i94 data from SAS files
-  - Transform nulls and nans
-  - Write to chunked csv files on S3
-
-- Step 2 - Deployed on Local Docker Airflow
-  - Extract i94 data from S3 csv files  
-  - Transform fields by merging lookups
-
-
-
-The target purpose for the project data pipeline is to deliver a data set which is suitable for Data Scientists and Analysts at the United States National Travel and Tourism Office (NTTO) to carry out exploratory data analysis with the aim of providing additional data products to State Tourism Offices and businesses which may benefit from new insights.  The dataset is also intended as a dataset for exploring the potential for several machine learning algorithms which are suited to target data platform.
-
-
-
-
-Installation: Installation is the next section in an effective README. Tell other users how to install your project locally. Optionally, include a gif to make the process even more clear for other people.
-
-Usage: The next section is usage, in which you instruct other people on how to use your project after they’ve installed it. This would also be a good place to include screenshots of your project in action.
-
-## Data Dictionary
-
-The data dictionary can be viewed in a separate pdf file: [view data dictionary](doc/datadictionary.pdf)
-
-
-### fact_visit
-
-| Field Name | Type | Description | Lineage | Examples | Missing Data |
-| ---------- | ---- | ----------- | ------- | -------- | ------------ |
-|            |      |             |         |          |              |
-| arrivaldate_id | date | Date of arrival in the US.  Also used to identify <br> the relevant date row in the date dimension. | Extracted from SAS data and transformed to YYYY-MM-dd format |
-
-### port
-
-### date
-
-### duration
-
-### age
