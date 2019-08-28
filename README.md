@@ -18,7 +18,7 @@ The imagined scenario is the creation of an initial trial data warehouse for rev
  * to enable data scientists to explore the data and provide feedback on improvements and/or extensions to the data presented
 
  All foreign visitors to the US are required to fill in an I94 arrival/departure record. The primary data set available for the trial data warehouse was the i94 data set of visitors to the US in 2016.  This data set was combined with data defining the ports of entry and their geographical location to produce the trial data warehouse.  
- 
+
  At a high level, from the SAS format i94 data stored in the Udacity workspace to the Data Warehouse files written as parquet format on Amazon S3 the project data pipeline is illustrated below.
 
 ![US Visitors ETL](images/usvisitors_datapipeline.png)
@@ -50,9 +50,9 @@ The imagined scenario is the creation of an initial trial data warehouse for rev
 
 7. **Development of script to move SAS data to S3.** The Udacity work space is secure so, because of the choice of working with Amazon EMR as the processing platform, it was necessary to move the i94 data to S3.  This was done in a python script by reading the data in chunks from the SAS source and transferring multiple CSV files for each month to S3.
 
-7. **Development of data model**  A data model was developed conceptually then pyspark code was developed locally to create data warehouse tables on spark and write them to parquet format to implement the data model.
+8. **Development of data model**  A data model was developed conceptually then pyspark code was developed locally to create data warehouse tables on spark and write them to parquet format to implement the data model.
 
-8. **Development of Airflow dags** to:
+9. **Development of Airflow dags** to:
     * check data sources are in place
     * create an EMR cluster
     * add the relevant job steps to the EMR to:
@@ -61,7 +61,7 @@ The imagined scenario is the creation of an initial trial data warehouse for rev
     * remove the EMR cluster
 
 
-9. **Execution of Airflow dags to generate the data warehouse parquet files on S3.**
+10. **Execution of Airflow dags to generate the data warehouse parquet files on S3.**
 
 
 
