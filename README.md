@@ -18,7 +18,7 @@ Table of Contents
 * [Airflow DAGs](#airflow-dags)
 * [S3 Folder structure](#s3-folder-structure)
 * [Alternative Data Scenarios](#alternative-data-scenarios)
-* [Working with the Data warehouse](#working-with-the-data-warehouse)
+* [Visualisations from the Data Warehoue](#visualisations-from-the-data-warehoue)
 * [Conclusion](#conclusion)
 
 ## Overview
