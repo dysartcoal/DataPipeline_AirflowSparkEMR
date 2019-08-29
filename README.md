@@ -233,6 +233,16 @@ There were two DAGs implemented in airflow:
 
 The folder structure on S3 is as follows:
 
+
+There are 3 main folders:
+
+  * **data** - which holds all input and output data
+  * **python_apps** - which holds the python code which is copied to the EMR cluster on start up
+  * **emr** - which holds the bootstrap script for which the path is passed as an argument to the emr_create_job_flow_operator in the DAG
+
+<font size="4">**data folder**</font>
+
+
 * **analysis** Holds the smaller state-specific csv files extracted from the Data Warehouse for Data Analysts to work with.  For example, the files can be loaded into Tableau and geographically based visualisations can be produced.
 * **analytics_data/us_visitors** Holds the US Visitors trial data warehouse parquet files:
   * visit_fact
@@ -290,3 +300,39 @@ The project rubric asked how alternative scenarios may be tackled.  A discussion
  * **Pipelines run on a daily basis**  In this scenario an Airflow dag would be implemented in the Udacity workspace to enable daily transfer of data from the Udacity environment to S3.  The existing Airflow dag running locally would have the schedule amended to daily rather than monthly.
 
  * **Database needed to be accessed by 100+ people**  The current database can be accessed by 100+ people via Athena however there may be significant cost involved with this volume of data analysis.  However, given an agreement on the final structure of the data warehouse, the data pipeline could be executed with an additional step to copy the data into Redshift where there are means available to support this level of concurrent access.
+
+
+## Working with the Data warehouse
+
+Several CSV files for individual states were produced as well as one of visitor counts at every port for the whole of 2016.  Some quick visualisations were created in Tableau and those relating to the individual states are shown below.  The visualisation of the ports of entry on the North American continent is included in the [Overview](#overview).
+
+
+**US Visitors to Colorado Summer 2016 by Country of Residence**
+
+Only the top countries of residence for visitors arriving in Colorado during Summer 2016 (June, July, August) are shown but it is interesting to see that German visitors tended to stay for a relatively long amount of time as well as come in their large numbers. The data could be used to drill down further into the data by visit purpose to see if perhaps the large number of visitors staying for 0-3 days from the UK are mainly business trips.  
+
+![US Visitors Colorado by Country of Residence Summer 2016](images/CO_countryofresidence_summer2016.png)
+
+**US Visitors to Colorado Summer 2016 by Purpose and Day of Arrival**
+
+This was just an exercise in playing with the Tableau visualisations and illustrates the relative numbers of visitors for a combination of visit purpose and day of arrival.  It doesn't necessarily provide much insight but the colours are great.
+
+![US Visitors Colorado by Purpose and Day of Week Summer 2016](images/COpurpose_dayofweek_summer2016.png)
+
+**US Visitors to California Summer 2016 by Country of Residence**
+
+Only the top countries of residence are shown for visitors arriving in California in Summer 2016 but again it is interesting that a large number of visitors from China are staying for a longer period than, for example, those from Japan.  Again, looking at visit purpose would be interesting.
+
+![US Visitors California by Country of Residence Summer 2016](images/CA_countryofresidence_summer2016.png)
+
+**US Visitors to Florida in 2016 by Mode of Arrival**
+
+Beware that the y-axis scales in these charts are vastly different (Air arrivals dwarf Sea and Land arrivalsin scale) however this is a chart of arrivals across all 12 months of 2016 and there are some interesting features including the spike in arrivals by land in April 2016 at all 3 of Florida's top arrival cities.
+
+![US Visitors Florida Main 3 Cities by Mode 2016](images/floridamajorcitiesbymode_visitors2016.png)
+
+## Conclusion
+
+The result of the project has been the ability to analyse US Visitor data geographically to gain insight about the visitors and their attributes plus the potential to apply machine learning algorithms to the data perhaps for the creation of clusters for targeted marketing.  It would also be possible to investigate the integration of the data with other geo-spatial data sets for greater insight.  The data team should all be able to work with what has been made available and feedback on positives and negatives thereby fulfilling the project remit.
+
+The use of airflow as the data pipeline orchestrator has been a great asset and any updates resulting from feedback from the data team to increase or reduce the attributes available for analysis will be straightforward to incorporate.
