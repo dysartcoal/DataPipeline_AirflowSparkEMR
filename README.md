@@ -41,7 +41,7 @@ The imagined scenario is the creation of an initial trial data warehouse for rev
 
 The full list of attributes is described in the [Data Dictionary](doc/datadictionary.pdf).
 
-It also enables geographical visualisations as illustrated in the example below which shows the ports of entry for visitors in 2016:
+The data warehouse also enables geographical visualisations as illustrated in the example below which shows the ports of entry for visitors for the whole of 2016.  This visualisation capability fulfills one of the three primary goals of the project.
 
 ![US Visitors - North American Continent Ports of Entry](images/allvisitors2016_geo.png)
 
@@ -55,27 +55,27 @@ It also enables geographical visualisations as illustrated in the example below 
 
  1. **Initial familiarisation with the i94 data.**  A small amount of data was explored locally in a Jupyter Notebook to get an understanding of the fields in the i94 data set, their types and any missing data in that small set.
 
- 2. **Creation of lookup data sets.** the SAS description file was used to create lookup data sets for ports, first destination state and countries of citizenship and residency. Some basic regular expression matching was used in python in a Jupyter Notebook to separate out the state and the port name to enable future joining against city and state data.  At this stage of the data exploration these new lookup tables were joined with the i94 data again to enable familiarisation with the data set.
+ 2. **Creation of lookup data sets.** The SAS description file was used to create lookup data sets for ports, first destination state and countries of citizenship and residency. For the port codes, some basic regular expression matching was used in python in a Jupyter Notebook to separate out the state and the port name to enable future joining against city and state data.  At this stage of the data exploration these new lookup tables were joined with the i94 data for further review.
 
- 3. **Decide on target platform.**  Taking into account the initial familiarity with the primary data set, the chosen imagined scenario, the technologies that had been covered in the course and the cost implications of various choices it was decided to pursue a solution using S3 for storage, Spark on EMR as the processing platform and Airflow running locally to orchestrate the data processing pipeline.
+ 3. **Decide on target platform.**  Taking into account the initial familiarity with the primary data set, the chosen imagined scenario, the technologies that had been covered in the course and the cost implications of various choices it was decided to pursue a solution using S3 for storage, Spark on EMR as the processing platform and Airflow running locally to orchestrate the data processing pipeline.  The justification for platform choices is discussed more in [Platform Choices and Justification](#platform-choices-and-justification).
 
  3. **Exploration of the airports data set.**  The airports data set appeared useful since it provided latitude and longitude attributes for the airports and therefore fulfilled the requirement of providing geographical information about the ports in which foreign visitors were arriving in the US on flights.  There were several problems in joining the i94 data set with the airport data set including:
-    * There was no common key for the ports at which flights were arriving and the airports they represented.  In only a small subset of cases, the port code matched the iata code for the airport.
-    * Several of the US cities have multiple international airports: for example, George Bush Intercontinental, William P Hobby and Sugar Land Regional Airports in Houston, Texas all have customs facilities but the two ports in the i94 port data set in Houston are named as "HOUSTON, TX" and "HULL FIELD, SUGAR LAND ARPT, TX" so it would have been misleading to select, for example, the latitude and longitude of George Bush Intercontinental as the geographical location for arrivals at port code "HOU".
+    * There was no common key for the ports at which flights were arriving and the airports they represented.  In only a small subset of cases did the port code match the iata code for the airport.
+    * Several of the US cities have multiple international airports: for example, George Bush Intercontinental, William P Hobby and Sugar Land Regional Airports in Houston, Texas all have customs facilities but the two ports in the i94 port data set in Houston are named as "HOUSTON, TX" and "HULL FIELD, SUGAR LAND ARPT, TX". It would have been misleading to select, for example, the latitude and longitude of George Bush Intercontinental as the geographical location for arrivals at port code "HOU".
 
- 4. **Development of code to obtain airport code for flights.**  Some code was developed to obtain the origin and destination airport iata codes by scraping the flightview.com http response returned from repeated searches using the airline and flight number fields of the i94 data set.  This was an interesting exercise but bore little fruit due to the fact that many of the flight numbers from 2016 were no longer used or had changed.  There are historical flight data sets available at a cost which may have been useful for resolving the arrival locations of international visitors to the US by air however these data sets were not purchased.
+ 4. **Development of code to obtain airport code for flights.**  Some code was developed to obtain the origin and destination airport iata codes by scraping the flightview.com http response returned from repeated searches using the airline and flight number fields of the i94 data set.  This was an interesting exercise but bore little fruit due to the fact that many of the flight numbers from 2016 were no longer used or had changed.  There are historical flight data sets available at a cost which may have been useful for resolving the precise arrival airport for international visitors to the US travelling by plane however these data sets were not purchased.
 
- 5. **Enrichment of i94 port data set.**  The US cities and world cities data sets were downloaded from Simple Maps at  [https://simplemaps.com/data/us-cities](https://simplemaps.com/data/us-cities) and  [https://simplemaps.com/data/world-cities](https://simplemaps.com/data/world-cities) respectively.  These data sets were joined against the lookup port dataset created earlier to provide, amongst other things, latitude and longitude attributes for the relevant US and world cities.  However, many of the fields remained unmatched and these were then populated using a manual checking of various online sources including:
+ 5. **Enrichment of i94 port data set.**  The US cities and world cities data sets were downloaded from Simple Maps at  [https://simplemaps.com/data/us-cities](https://simplemaps.com/data/us-cities) and  [https://simplemaps.com/data/world-cities](https://simplemaps.com/data/world-cities) respectively.  These data sets were joined against the lookup port dataset created earlier to provide, amongst other things, latitude and longitude attributes for the relevant US and world cities.  However, many of the ports of entry remained unmatched and these were then populated with latitude, longitude, city etc using a manual checking of various online sources including:
     * Wikipedia - this provided several Port of Entry matches with their latitude and longitude
     * Google Maps - provided latitude and longitude for several more obscure land crossing points and clarified certain ambiguous names by their geography
     * acukwik.com - resolved some airport queries
     * Google Search - provided a good starting point for more challenging port names
 
-7. **Development of script to move SAS data to S3.** The Udacity work space is secure so, because of the choice of working with Amazon EMR as the processing platform, it was necessary to move the i94 data to S3.  This was done in a python script by reading the data in chunks from the SAS source and transferring multiple CSV files for each month to S3.
+7. **Development of script to move SAS data to S3.** The Udacity work space did not appear to support direct access to the i94 data from outside of the Udacity system so, because of the choice of working with Amazon EMR as the processing platform, it was necessary to move the i94 data to S3.  This was done in a python script by reading the data in chunks from the SAS source and transferring multiple CSV files for each month to S3.
 
 8. **Development of data model.**  A data model was developed conceptually then pyspark code was developed locally to create data warehouse tables on spark and write them to parquet format to implement the data model.
 
-9. **Development of Airflow dags** to:
+9. **Development of Airflow DAGs.**  Airflow DAGs were developed to orchestrate the data processing pipeline for the creation of the dimension and fact tables for the US Visitors data warehouse.  The DAGs include steps to:
     * check data sources are in place
     * create an EMR cluster
     * add the relevant job steps to the EMR to:
@@ -84,7 +84,7 @@ It also enables geographical visualisations as illustrated in the example below 
     * remove the EMR cluster
 
 
-10. **Execution of Airflow dags to generate the data warehouse parquet files on S3.**
+10. **Execution of Airflow DAGs to generate the data warehouse parquet files on S3.**
 
 
 ## Data Sources
@@ -113,20 +113,20 @@ The following platforms were used during the project
 
 **Amazon S3 and Amazon EMR and Spark for Trial Data Warehouse Platform**
 
-This is a trial system involving Data Scientists and Data Analysts but with a large amount of data. By selecting Amazon EMR and Spark as the platform for Data Scientists this provides them with plenty of flexibility and a platform suitable for the size of the data set plus support for several machine learning algorithms as well the potential to explore graph databases and associated algorithms.  The Data Science team is a small group so access to the system is more easily managed than for the Data Analysts.  
+This is a trial system involving Data Scientists and Data Analysts but with a large amount of data. By selecting Amazon EMR and Spark as the platform for Data Scientists this provides them with plenty of flexibility and a platform suitable for the size of the data set plus support for several machine learning algorithms and the potential to explore graph databases and associated algorithms.  The Data Science team is a small group so access to the system is more easily managed than for the Data Analysts.  
 
-Given the focus on individual US states, it is simple for relevant people in the Data Team to generate low cost csv files on a per state basis using Spark for the Data Analysts to investigate the current Data Warehouse data.  Alternatively, if the Data Analysts wanted more flexibility to work across larger sets of data the partitioning of the data and use of parquet as a storage format is well suited to using Amazon Athena and SQL-style querying that the analysts have some basic familiarity with while still keeping costs under control.  This is a good option for larger scale exploratory work on the trial Data Warehouse.
+Given the focus on individual US states, it is simple for relevant people in the Data Team to generate smaller csv files on a per state basis using Spark. These smaller files can be used by the Data Analysts to investigate the current Data Warehouse data for its suitability.  Alternatively, if the Data Analysts wanted more flexibility to work across larger sets of data, the partitioning of the data and use of parquet as a storage format is well suited to using Amazon Athena and SQL-style querying that the analysts have some basic familiarity with while still keeping costs under control.  This is a good option for larger scale exploratory work on the trial Data Warehouse.
 
 Once feedback has been received and any schema or aggregation changes implemented it would be possible to update the data pipeline to load the data warehouse into Amazon Redshift.  In fact, by running the pilot study in the Amazon environment this opens up many options moving forward.
 
-Finally, another influencing factor in the choice of Amazon S3 as the final storage platform for the data was the low cost of this solution compared to a Redshift implementation at the outset.
+Finally, another influencing factor in the choice of Amazon S3 as the final storage platform for the data was the low cost of this solution compared to a Redshift implementation at this trial stage.
 
 **Parquet format files**
 
 Parquet format files are an efficient means of storing the data for the trial data warehouse for several reasons:
 
  * the data is compressed which reduces costs
- * although writing of parquet files can be slow, reading is very quick which is a suitable for this write once-read many times scenario
+ * although writing of parquet files can be slow, reading is very quick which is a suitable for this write-once-read-many times scenario
  * the data can be partitioned which can make reading of the data efficient.  This is particularly useful when users are only interested in very clearly defined subsets of data such as individual US states
  * columnar storage improves the efficiency of data reads when filtering by column values
  * data can be appended which is useful in this scenario where data is being processed in months
@@ -134,11 +134,11 @@ Parquet format files are an efficient means of storing the data for the trial da
 
 **Amazon EMR and Spark for ETL Data Processing**
 
-Amazon EMR and Spark were selected for the ETL data processing platform because of the capacity to process large amounts of data, the option to scale up the number of EC2 instances if necessary and the relatively low cost of doing so when the platform due to the fact that the platform can be created and removed on demand.  Within the AWS ecosystem, access to objects on Amazon S3 is straightforward which was an additional plus point in the platform selection.
+Amazon EMR and Spark were selected for the ETL data processing platform because of the capacity to process large amounts of data, the option to scale up the number of EC2 instances if necessary and the relatively low cost of doing so due to the fact that the platform can be created and removed on demand by the Airflow data processing pipeline.  Within the AWS ecosystem, access to objects on Amazon S3 is straightforward which was an additional plus point in the platform selection.
 
 **Amazon S3 for Staging Area for Data**
 
-Amazon S3 is a relatively low cost storage area for large amounts of data and easily accessible by other systems within the AWS ecosystem.
+Amazon S3 is a relatively low cost storage area for large amounts of data and easily accessible by other systems within the AWS ecosystem and therefore a suitable choice for the storage of the i94 data files.
 
 **Udacity Workspace for i94 SAS Data ETL**
 
@@ -156,9 +156,9 @@ The final data model is a star schema data warehouse as shown below.  The fact t
 
  ![US Visitors Data Model](images/usvisitors_erd.png)
 
- This structure was chosen because it is a straightforward structure which supports the construction of simple queries while still providing flexibility for exploratory analysis.   The data fields have been named to provide explanation of meaning, although a data dictionary is also provided below in this section.
+ This structure was chosen because it is a straightforward structure which supports the construction of simple queries while still providing flexibility for exploratory analysis.   The data fields have been named to provide explanation of meaning, although a data dictionary is also provided in the [Data Dictionary](doc/datadictionary.pdf).
 
- By using this structure analysts will be able to aggregate across many different combinations of values to count the number of visitors with the selected attributes.  These counts can be visualised geospatially by combining with the port dimension thus fulfilling the requirement to enable geographical analysis.
+ By using this structure for the Data Warehouse, analysts will be able to aggregate across many different combinations of values to analyse the number of visitors with the selected attributes.  These counts can be visualised geospatially by combining with the port dimension thus fulfilling the requirement to enable geographical analysis.
 
 
 ### Discarded Columns
@@ -173,7 +173,7 @@ The final data model is a star schema data warehouse as shown below.  The fact t
  * dtadfile, visapost, occup, entdepa, entdepd, entdepu, dtaddto - are all fields that are not used.
  * matflag - the value of this field has a 1 to 1 correlation with whether or not the depdate field is populated
  * biryear - it is assumed that the analysts wanted the age of visitors rather than the year of birth
- * insnum - this value was sparsely populated and not of interest to the data analysts
+ * insnum - this value was sparsely populated and it is assumed not of interest to the data analysts
  * airline - it is assumed a decision was taken by data analysts that they were not interested in airline for this project.
  * fltno - as above.
  * admnum - the admission number. Irrelevant in any aggregation.
@@ -230,16 +230,19 @@ The following files are used in the data pipeline:
 
 ## Data Quality Checks
 
-Prior to aggregation, the code which executes on spark writes out a summary of all fields and the number of nulls, Nans, unknown values for each field in the data set.
+Prior to aggregation, the code which executes on spark writes out a summary of all fields and the number of nulls, Nans, unknown values for each field in the data set.  These files are written to the **pipeline_logs** folder on S3 for the year and month of the airflow DAG execution and in the folders:
+  * checknulls
+  * intfields
+  * stringfields
 
 During data processing on EMR in Spark, there is a check after each read command to check that there has been data successfully read from the source.
 
-At the end of the data processing pipeline for each month, the number of rows of the source data is checked against the total sum of visitors in the parquet fact table to ensure that no data has been lost and that every visitor is attributed somewhere.
+At the end of the data processing pipeline for each month, the number of rows of the source data is checked against the total sum of visitors in the parquet fact table to ensure that no data has been lost and that every visitor is attributed somewhere.  A successful rowcheck is confirmed in the **rowchecks** file in the **pipleline_logs** folder.
 
 
 ## Airflow DAGs
 
-There were two DAGs implemented in airflow:
+There were two DAGs implemented in Apache Airflow to implement the data processing pipeline for the US Visitors data warehouse:
 
  * the first to check for the data sources required to create port dimension table and then create the port, age and duration dimension tables which are slow changing dimension tables that do not require to be changed for each new month which is processed.
  * the second to check for the data sources required to create the visit_fact table and then create the date dimension table and the visit_fact table and check the validity.  This dag was scheduled to run on a monthly basis with catchup so that the historical data could be processed.
@@ -254,7 +257,7 @@ There were two DAGs implemented in airflow:
 
 ![US Visitors Fact DAG](images/usvisitors_fact_dag_graphview.png)
 
-**US Visitors Dimension DAG - Tree View Across Several Months**
+**US Visitors Fact DAG - Tree View Across Several Months**
 
 ![US Visitors Fact DAG Tree View](images/usvisitors_fact_dag_treeview.png)
 
@@ -298,23 +301,23 @@ There are 3 main folders:
 
 The project rubric asked how alternative scenarios may be tackled.  A discussion of these is included below.
 
- * **Data increased by 100x**  In this scenario, at the start of the pipeline, when staging the i94 data on S3, it could be split into 100 separate subsets of data within each month.  This would require a logic change to the ETL extracting the data to write each new set of 100 files to a new folder on S3 and for the python code running on spark to be updated to process the separate folders within the month, one folder at at time.
+ * **Data increased by 100x:**  In this scenario, at the start of the pipeline when staging the i94 data on S3, it could be split into 100 separate subsets of data within each month.  This would require a logic change to the ETL extracting the data to write each new set of 100 files to a new folder on S3 and for the python code running on spark to be updated to process the separate folders within the month, one folder at at time.
 
-  When it comes to analysis the Data Scientists would make decisions on the filtering and selection of data to enable their analysis. Data Engineers could continue to manage the creation of data subsets in a suitable format for Data Analysts or alternatively provide guidelines for filtering and selection for Athena queries.
+  It may be necessary when presented with the increased volume of data for the Data Scientists to filter the number of rows and/or reduce the number of attributes selected for their analysis. Data Engineers could continue to manage the creation of data subsets in a suitable format for Data Analysts or alternatively provide guidelines for filtering and selection for Athena queries.
 
- * **Pipelines run on a daily basis**  In this scenario an Airflow dag would be implemented in the Udacity workspace to enable daily transfer of data from the Udacity environment to S3.  The existing Airflow dag running locally would have the schedule amended to daily rather than monthly.
+ * **Pipelines run on a daily basis:**  In this scenario an Airflow DAG would be implemented in the Udacity workspace to enable daily transfer of data from the Udacity environment to S3.  The existing Airflow DAG running locally would have the schedule amended to daily rather than monthly.
 
- * **Database needed to be accessed by 100+ people**  The current database can be accessed by 100+ people via Athena however there may be significant cost involved with this volume of data analysis.  However, given an agreement on the final structure of the data warehouse, the data pipeline could be executed with an additional step to copy the data into Redshift where there are means available to support this level of concurrent access.
+ * **Database needed to be accessed by 100+ people:**  The current database can be accessed by 100+ people via Athena however there may be significant cost involved with this volume of data analysis.  Given an agreement on the final structure of the data warehouse, the data pipeline could be executed with an additional step to copy the data into Redshift where there are means available to support this level of concurrent access.
 
 
-## Working with the Data warehouse
+## Visualisations from the Data Warehoue
 
-Several CSV files for individual states were produced as well as one of visitor counts at every port for the whole of 2016.  Some quick visualisations were created in Tableau and those relating to the individual states are shown below.  The visualisation of the ports of entry on the North American continent is included in the [Overview](#overview).
+Several CSV files for individual states were produced as well as one of visitor counts at every port for the whole of 2016.  Some quick visualisations were created in Tableau and those relating to the individual states are shown below.  The visualisation of the ports of entry on the North American continent for the whole of 2016 is included in the [Overview](#overview).
 
 
 **US Visitors to Colorado Summer 2016 by Country of Residence**
 
-Only the top countries of residence for visitors arriving in Colorado during Summer 2016 (June, July, August) are shown but it is interesting to see that German visitors tended to stay for a relatively long amount of time as well as come in their large numbers. The data could be used to drill down further into the data by visit purpose to see if perhaps the large number of visitors staying for 0-3 days from the UK are mainly business trips.  
+Only the top countries of residence for visitors arriving in Colorado during Summer 2016 (June, July, August) are shown in this chart but it is interesting to see that German visitors tended to stay for a relatively long amount of time as well as come in their large numbers. The data could be used to drill down further into the data by visit purpose to see if perhaps the large number of visitors staying for 0-3 days from the UK are mainly business trips.  
 
 ![US Visitors Colorado by Country of Residence Summer 2016](images/CO_countryofresidence_summer2016.png)
 
@@ -326,18 +329,18 @@ This was just an exercise in playing with the Tableau visualisations and illustr
 
 **US Visitors to California Summer 2016 by Country of Residence**
 
-Only the top countries of residence are shown for visitors arriving in California in Summer 2016 but again it is interesting that a large number of visitors from China are staying for a longer period than, for example, those from Japan.  Again, looking at visit purpose would be interesting.
+In this chart only the top countries of residence are shown for visitors arriving in California in Summer 2016 but again it is interesting that a large number of visitors from China are staying for a longer period than, for example, those from Japan.  Again, looking at visit purpose would be interesting.
 
 ![US Visitors California by Country of Residence Summer 2016](images/CA_countryofresidence_summer2016.png)
 
 **US Visitors to Florida in 2016 by Mode of Arrival**
 
-Beware that the y-axis scales in these charts are vastly different (Air arrivals dwarf Sea and Land arrivalsin scale) however this is a chart of arrivals across all 12 months of 2016 and there are some interesting features including the spike in arrivals by land in April 2016 at all 3 of Florida's top arrival cities.
+Beware that the y-axis scales in these charts are vastly different (Air arrivals dwarf Sea and Land arrivals in scale) however this is a chart of arrivals across all 12 months of 2016 and there are some interesting features including the spike in arrivals by land in April 2016 at all 3 of Florida's top arrival cities.
 
 ![US Visitors Florida Main 3 Cities by Mode 2016](images/floridamajorcitiesbymode_visitors2016.png)
 
 ## Conclusion
 
-The result of the project has been the ability to analyse US Visitor data geographically to gain insight about the visitors and their attributes plus the potential to apply machine learning algorithms to the data perhaps for the creation of clusters for targeted marketing.  It would also be possible to investigate the integration of the data with other geo-spatial data sets for greater insight.  The data team should all be able to work with what has been made available and feedback on positives and negatives thereby fulfilling the project remit.
+The result of the project has been the ability to analyse US Visitor data geographically and to generally gain insight about the visitors and their attributes.  The potential exists to apply machine learning algorithms to the data, perhaps for the investigation of clusters for targeted marketing.  It would also be possible to trial the integration of the data with other geo-spatial data sets for greater insight.  The data team should all be able to work with what has been made available and they can provide feedback on positives and negatives for review.
 
 The use of airflow as the data pipeline orchestrator has been a great asset and any updates resulting from feedback from the data team to increase or reduce the attributes available for analysis will be straightforward to incorporate.
