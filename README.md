@@ -28,12 +28,23 @@ The imagined scenario is the creation of an initial trial data warehouse for rev
 
  All foreign visitors to the US are required to fill in an I94 arrival/departure record. The primary data set available for the trial data warehouse was the i94 data set of visitors to the US in 2016.  This data set was combined with data defining the ports of entry and their geographical location to produce the trial data warehouse.  
 
- At a high level, from the SAS format i94 data stored in the Udacity workspace to the Data Warehouse files written as parquet format on Amazon S3 the project data pipeline is illustrated below.
+ The trial data warehouse supports analysis of US Visitors to the US by state by visit attributes such as:
 
-![US Visitors ETL](images/usvisitors_datapipeline.png)
+   * arrival port
+   * visitor age
+   * visitor country of residence
+   * visit purpose
+   * visit duration
+
+The full list of attributes is described in the [Data Dictionary](#data-dictionary).
+
+It also enables geographical visualisations as illustrated in the example below which shows the ports of entry for visitors in 2016:
+
+![US Visitors - North American Continent Ports of Entry](images/allvisitors2016_geo.png)
 
 
 ## Steps Taken
+
 
  The project took the following steps:
 
@@ -73,6 +84,22 @@ The imagined scenario is the creation of an initial trial data warehouse for rev
 10. **Execution of Airflow dags to generate the data warehouse parquet files on S3.**
 
 
+## Data Sources
+
+The following data sources were used in the project:
+
+| Data Source Description | Format |
+| ----------------------- | ------ |
+| i94 visitor arrival data set | SAS |
+| port data set | csv |  
+| state data set | csv |
+| country data set | csv |
+| US cities data set (from simplemaps.com) | csv |
+| World cities data set (from simplemaps.com) | csv |
+
+At a high level, from the SAS format i94 data stored in the Udacity workspace to the Data Warehouse files written as parquet format on Amazon S3 the project data pipeline is illustrated below.
+
+![US Visitors ETL](images/usvisitors_datapipeline.png)
 
 
 ## Platform Choices and Justification
@@ -122,13 +149,13 @@ Apache airflow contributes a huge amount of control to the data pipeline develop
 
 ## Data Model
 
-The final data model is a star schema data warehouse as shown below.  The fact table captures a count of the number of visitors with the associated attributes.
+The final data model is a star schema data warehouse as shown below.  The fact table captures a count of the number of visitors with the given attributes.
 
  ![US Visitors Data Model](images/usvisitors_erd.png)
 
  This structure was chosen because it is a straightforward structure which supports the construction of simple queries while still providing flexibility for exploratory analysis.   The data fields have been named to provide explanation of meaning, although a data dictionary is also provided below in this section.
 
- By using this structure analysts will be able to aggregate across many different combinations of values to count the number of visitors with the selected attributes.  These counts can be visualised geographically by combining with the port dimension thus fulfilling the requirement to enable geographical analysis.
+ By using this structure analysts will be able to aggregate across many different combinations of values to count the number of visitors with the selected attributes.  These counts can be visualised geospatially by combining with the port dimension thus fulfilling the requirement to enable geographical analysis.
 
 
 ### Discarded Columns
@@ -185,7 +212,7 @@ The data dictionary can be viewed in a separate pdf file: [view data dictionary]
 There were two DAGs implemented in airflow:
 
  * the first to check for the data sources required to create port dimension table and then create the port, age and duration dimension tables which are slow changing dimension tables that do not require to be changed for each new month which is processed.
- * the second to check for the data sources required to create the visit_fact table and then create the date dimension table and the visit_fact table and check the validity.
+ * the second to check for the data sources required to create the visit_fact table and then create the date dimension table and the visit_fact table and check the validity.  This dag was scheduled to run on a monthly basis with catchup so that the historical data could be processed.
 
  These are illustrated in the diagrams below:
 
