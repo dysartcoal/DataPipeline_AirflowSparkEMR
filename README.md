@@ -5,6 +5,7 @@ Table of Contents
 
 * [Overview](#overview)
 * [Steps Taken](#steps-taken)
+* [Data Sources](#data-sources)
 * [Platform Choices and Justification](#platform-choices-and-justification)
 * [Data Model](#data-model)
    * [Discarded Columns](#discarded-columns)
@@ -12,11 +13,13 @@ Table of Contents
    * [Unknown or Invalid values](#unknown-or-invalid-values)
    * [Ranges for Duration and Age dimensions](#ranges-for-duration-and-age-dimensions)
    * [Data Dictionary](#data-dictionary)
-* [Airflow DAGs](#airflow-dags)
-* [S3 Folder structure](#s3-folder-structure)
 * [Source Code](#source-code)
 * [Data Quality Checks](#data-quality-checks)
+* [Airflow DAGs](#airflow-dags)
+* [S3 Folder structure](#s3-folder-structure)
 * [Alternative Data Scenarios](#alternative-data-scenarios)
+* [Working with the Data warehouse](#working-with-the-data-warehouse)
+* [Conclusion](#conclusion)
 
 ## Overview
 This is the Capstone project for the Udacity data engineering nanodegree.  The purpose is to utilise skills and tools presented during the program.
@@ -206,62 +209,6 @@ It is assumed that the ranges stated for durations and ages defined in the durat
 The data dictionary can be viewed in a separate pdf file: [view data dictionary](doc/datadictionary.pdf)
 
 
-
-## Airflow DAGs
-
-There were two DAGs implemented in airflow:
-
- * the first to check for the data sources required to create port dimension table and then create the port, age and duration dimension tables which are slow changing dimension tables that do not require to be changed for each new month which is processed.
- * the second to check for the data sources required to create the visit_fact table and then create the date dimension table and the visit_fact table and check the validity.  This dag was scheduled to run on a monthly basis with catchup so that the historical data could be processed.
-
- These are illustrated in the diagrams below:
-
-**US Visitors Dimension DAG**
-
-![US Visitors Dimension DAG](images/usvisitors_dim_dag_graphview.png)
-
-**US Visitors Fact DAG**
-
-![US Visitors Fact DAG](images/usvisitors_fact_dag_graphview.png)
-
-**US Visitors Dimension DAG - Tree View Across Several Months**
-
-![US Visitors Fact DAG Tree View](images/usvisitors_fact_dag_treeview.png)
-
-
-## S3 Folder structure
-
-The folder structure on S3 is as follows:
-
-
-There are 3 main folders:
-
-  * **data** - which holds all input and output data
-  * **python_apps** - which holds the python code which is copied to the EMR cluster on start up
-  * **emr** - which holds the bootstrap script for which the path is passed as an argument to the emr_create_job_flow_operator in the DAG
-
-<font size="4">**data folder**</font>
-
-
-* **analysis** Holds the smaller state-specific csv files extracted from the Data Warehouse for Data Analysts to work with.  For example, the files can be loaded into Tableau and geographically based visualisations can be produced.
-* **analytics_data/us_visitors** Holds the US Visitors trial data warehouse parquet files:
-  * visit_fact
-  * date
-  * port
-  * age
-  * duration
-* **lookup_data** Holds the data lookup files which were manually uploaded to S3 and which are used in the generation of the visit_fact table:
-  * i94_addr_codes.csv
-  * i94cit_i94res_codes.csv
-  * i94port_codes.csv
-* **pipeline_logs/us_visitors/_year_/_month_** Holds output from the data pipeline code execution on Amazon EMR for each year and month including:
-  * a summary of all null or invalid values
-  * a summary of the values for all integer fields
-  * a summary of the values for all string fields
-  * confirmation that the total visitor count written to parquet matches the total number of rows read from the SAS input files.
-* **sas_data/_year_/_month_** Holds the csv files resulting from the process of extracting the SAS data from Udacity and writing it to S3 as multiple csv files per month.
-
-
 ## Source Code
 
 The following files are used in the data pipeline:
@@ -287,6 +234,63 @@ Prior to aggregation, the code which executes on spark writes out a summary of a
 During data processing on EMR in Spark, there is a check after each read command to check that there has been data successfully read from the source.
 
 At the end of the data processing pipeline for each month, the number of rows of the source data is checked against the total sum of visitors in the parquet fact table to ensure that no data has been lost and that every visitor is attributed somewhere.
+
+
+## Airflow DAGs
+
+There were two DAGs implemented in airflow:
+
+ * the first to check for the data sources required to create port dimension table and then create the port, age and duration dimension tables which are slow changing dimension tables that do not require to be changed for each new month which is processed.
+ * the second to check for the data sources required to create the visit_fact table and then create the date dimension table and the visit_fact table and check the validity.  This dag was scheduled to run on a monthly basis with catchup so that the historical data could be processed.
+
+ These are illustrated in the diagrams below:
+
+**US Visitors Dimension DAG**
+
+![US Visitors Dimension DAG](images/usvisitors_dim_dag_graphview.png)
+
+**US Visitors Fact DAG**
+
+![US Visitors Fact DAG](images/usvisitors_fact_dag_graphview.png)
+
+**US Visitors Dimension DAG - Tree View Across Several Months**
+
+![US Visitors Fact DAG Tree View](images/usvisitors_fact_dag_treeview.png)
+
+
+## S3 Folder structure
+
+The folder structure on S3 is as follows
+
+![S3 Folder Structure](images/s3_folderstructure.png)
+
+
+There are 3 main folders:
+
+  * **awsemr** - which holds the bootstrap script for which the path is passed as an argument to the emr_create_job_flow_operator in the DAG
+  * **data** - which holds all input and output data
+  * **python_apps** - which holds the python code which is copied to the EMR cluster on start up
+
+
+<font size="4">**data folder**</font>
+
+* **analysis** Holds the smaller state-specific csv files extracted from the Data Warehouse for Data Analysts to work with.  For example, the files can be loaded into Tableau and geographically based visualisations can be produced.
+* **analytics_data/us_visitors** Holds the US Visitors trial data warehouse parquet files:
+  * visit_fact
+  * date
+  * port
+  * age
+  * duration
+* **lookup_data** Holds the data lookup files which were manually uploaded to S3 and which are used in the generation of the visit_fact table:
+  * i94_addr_codes.csv
+  * i94cit_i94res_codes.csv
+  * i94port_codes.csv
+* **pipeline_logs/us_visitors/_year_/_month_** Holds output from the data pipeline code execution on Amazon EMR for each year and month including:
+  * a summary of all null or invalid values
+  * a summary of the values for all integer fields
+  * a summary of the values for all string fields
+  * confirmation that the total visitor count written to parquet matches the total number of rows read from the SAS input files.
+* **sas_data/_year_/_month_** Holds the csv files resulting from the process of extracting the SAS data from Udacity and writing it to S3 as multiple csv files per month.
 
 
 ## Alternative Data Scenarios
