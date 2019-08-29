@@ -49,12 +49,12 @@ DEFAULT_ARGS = {
 }
 
 dag = DAG(
-    'usvisitors_fact_dag_201607_201612',
+    'usvisitors_fact_dag',
     default_args=DEFAULT_ARGS,
-    start_date=datetime(2016,7,1),
-    end_date=datetime(2016,12,1), # Currently only have data until Dec 2016
+    start_date=datetime(2016,1,1),
+    end_date=datetime(2016,12,1),
     catchup=True,
-    dagrun_timeout=timedelta(hours=2),
+    dagrun_timeout=timedelta(hours=12),
     #schedule_interval='0 3 * * *'
     #schedule_interval=timedelta(seconds=10)
     description='US visitors fact table ETL pipeline',
