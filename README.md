@@ -29,9 +29,9 @@ The imagined scenario is the creation of an initial trial data warehouse for rev
  * to explore the potential for state-specific data products based around foreign visitors to the US and the potential for combining with other geo-tagged data
  * to enable data scientists to explore the data and provide feedback on improvements and/or extensions to the data presented
 
- All foreign visitors to the US are required to fill in an I94 arrival/departure record. The primary data set available for the trial data warehouse was the i94 data set of visitors to the US in 2016.  This data set was combined with data defining the ports of entry and their geographical location to produce the trial data warehouse.  
+ All foreign visitors to the US are required to fill in an I94 arrival/departure record. The primary data set available for the trial data warehouse was the i94 data set of visitors to the US in 2016.  This data set was combined with data defining the ports of entry and their geographical location to produce the data warehouse.  
 
- The trial data warehouse supports analysis of US Visitors to the US by state by visit attributes such as:
+ The data warehouse supports analysis of US Visitors to the US by state by visit attributes such as:
 
    * arrival port
    * visitor age
@@ -39,7 +39,7 @@ The imagined scenario is the creation of an initial trial data warehouse for rev
    * visit purpose
    * visit duration
 
-The full list of attributes is described in the [Data Dictionary](#data-dictionary).
+The full list of attributes is described in the [Data Dictionary](doc/datadictionary.pdf).
 
 It also enables geographical visualisations as illustrated in the example below which shows the ports of entry for visitors in 2016:
 
