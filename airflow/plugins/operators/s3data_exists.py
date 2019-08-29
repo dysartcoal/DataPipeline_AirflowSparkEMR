@@ -1,3 +1,4 @@
+"""Check for existence of specified files on S3"""
 from airflow.hooks.S3_hook import S3Hook
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
