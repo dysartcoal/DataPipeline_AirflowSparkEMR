@@ -216,6 +216,7 @@ The following files are used in the data pipeline:
 | Filename | Location | Purpose | Execution Platform |
 | -------- | -------- | ------- | ------------------ |
 | ETL/etl/udacitysas_to_s3csv.py | Udacity | ETL: Udacity i94 SAS data to S3 CSV | Udacity|
+| awsemr/bootstrap_action.sh | S3 | Script executed by EMR cluster on startup to <br> copy python scripts to cluster from S3. | Udacity|
 | airflow/plugins/operators/s3data_exists.py | Local | Data Check: Check data exists on S3 | Local|
 | airflow/plugins/operators/my_emr_add_steps_operator.py | Local | Data processing: Add EMR job step with templated fields | Local|
 | airflow/plugins/operators/__ init __.py | Local | Support file | Local|
