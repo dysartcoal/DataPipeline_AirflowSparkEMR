@@ -4,6 +4,9 @@ The data is read from the visit_fact table joined against the relevant dimension
 and filtered according to the input parameters specifying the list of years,
 months and states to be included.
 
+The data is aggregated according to a fixed set of columns.  This needs 
+updated to be more flexible.
+
 A csv file is written which is named according to the years, months and states
 specified.
 
