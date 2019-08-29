@@ -28,7 +28,8 @@ import sys, getopt
 
 from pyspark.sql import SparkSession
 from pyspark.context import SparkContext
-from pyspark.sql.functions import isnan, when, count, col, lit, ltrim, regexp_replace
+from pyspark.sql.functions import (isnan, when, count, col, lit, ltrim,
+                                    regexp_replace, sum)
 from pyspark.sql.types import *
 
 
@@ -69,6 +70,12 @@ def get_slice(spark, data_path, yearlist, monthlist, statelist, logger):
     df = (visit_fact_df.where(col('year').isin(yearlist))
                         .where(col('month').isin(monthlist))
                         .where(col('arrivalstate_abbr').isin(statelist)))
+    agg_cols =  ['arrivaldate_id', 'port_id', 'visitpurpose',
+                'day', 'week', 'month', 'year', 'weekday',
+                'port_mode', 'port_latitude', 'port_longitude',
+                'port_place', 'port_city', 'port_county', 'port_state_abbr',
+                'port_state', 'port_country_abbr', 'port_country',
+                'duration_days', 'countryofresidence']
     slice_df = (df.join(age_df, df.age_id==age_df.age_id)
                 .drop(age_df.age_id)
                 .join(date_df, df.arrivaldate_id==date_df.date_id)
@@ -79,7 +86,10 @@ def get_slice(spark, data_path, yearlist, monthlist, statelist, logger):
                 .drop(port_df.port_id)
                 .drop(df.year)
                 .drop(df.month)
-                .drop(df.mode))
+                .drop(df.mode)
+                .groupby(agg_cols)\
+                .agg(sum('visitorcount').alias('visitorcount'))
+                )
     slice_df.persist()
     rowcount = slice_df.count()
 
