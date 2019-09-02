@@ -29,7 +29,7 @@ The imagined scenario is the creation of an initial trial data warehouse for rev
  * to explore the potential for state-specific data products based around foreign visitors to the US and the potential for combining with other geo-tagged data
  * to enable data scientists to explore the data and provide feedback on improvements and/or extensions to the data presented
 
-All foreign visitors to the US are required to fill in an I94 arrival/departure record. The primary data set available for the trial data warehouse was the i94 data set of visitors to the US in 2016.  This data set was combined with data defining the ports of entry and their geographical location to produce the data warehouse.
+All foreign visitors to the US are required to fill in an I94 arrival/departure record. The primary data set available for the trial data warehouse was the i94 data set of visitors to the US in 2016.  This data set contained more than 40 million rows of data and more than 6GB of data in SAS format.  This data set was combined with data defining the ports of entry and their geographical location to produce the data warehouse.
 
 The data warehouse supports analysis of US Visitors to the US by state by visit attributes such as:
 
@@ -104,7 +104,7 @@ At a high level, from the SAS format i94 data stored in the Udacity workspace to
 
 ![US Visitors ETL](images/usvisitors_datapipeline.png)
 
-The data warehouse has just under 21 millions rows and a total size of just under 95MB on S3.  The original i94 data set was 40 million rows of data.  
+The data warehouse has just under 21 millions rows and a total size of just under 95MB on S3.  The original i94 data set was 40 million rows of data and over 6GB in size.  
 
 
 ## Platform Choices and Justification
