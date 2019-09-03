@@ -18,7 +18,7 @@ Table of Contents
 * [Airflow DAGs](#airflow-dags)
 * [S3 Folder structure](#s3-folder-structure)
 * [Alternative Data Scenarios](#alternative-data-scenarios)
-* [Visualisations from the Data Warehoue](#visualisations-from-the-data-warehoue)
+* [Visualisations from the Data Warehouse](#visualisations-from-the-data-warehouse)
 * [Conclusion](#conclusion)
 
 ## Overview
@@ -312,7 +312,7 @@ The project rubric asked how alternative scenarios may be tackled.  A discussion
  * **Database needed to be accessed by 100+ people:**  The current database can be accessed by 100+ people via Athena however there may be significant cost involved with this volume of data analysis.  Given an agreement on the final structure of the data warehouse, the data pipeline could be executed with an additional step to copy the data into Redshift where there are means available to support this level of concurrent access.
 
 
-## Visualisations from the Data Warehoue
+## Visualisations from the Data Warehouse
 
 Several CSV files for individual states were produced as well as one of visitor counts at every port for the whole of 2016.  Some quick visualisations were created in Tableau and those relating to the individual states are shown below.  The visualisation of the ports of entry on the North American continent for the whole of 2016 is included in the [Overview](#overview).
 
